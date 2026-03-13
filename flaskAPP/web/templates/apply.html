@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-wrap">
+  <header class="page-header">
+    <h1 class="page-title">Apply</h1>
+    <p class="page-subtitle">
+      Tell us where to send reports and what you want to optimise. Deployment runs inside your AWS account.
+    </p>
+  </header>
+
+  <div class="card">
+    {% if errors %}
+      <div class="alert alert-error">
+        <strong>Please fix:</strong>
+        <ul>
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('apply_submit') }}" class="form">
+      <div class="grid">
+
+        <div class="field span-2">
+          <label class="label" for="organisation_name">Company name</label>
+          <input
+            class="input"
+            id="organisation_name"
+            name="organisation_name"
+            value="{{ form.organisation_name if form else '' }}"
+            placeholder="Company name"
+            required
+            maxlength="160"
+            autocomplete="organization"
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="contact_name">Contact name</label>
+          <input
+            class="input"
+            id="contact_name"
+            name="contact_name"
+            value="{{ form.contact_name if form else '' }}"
+            placeholder="Full name"
+            required
+            maxlength="120"
+            autocomplete="name"
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="contact_email">Contact email</label>
+          <input
+            class="input"
+            type="email"
+            id="contact_email"
+            name="contact_email"
+            value="{{ form.contact_email if form else '' }}"
+            placeholder="name@company.com"
+            required
+            maxlength="190"
+            autocomplete="email"
+          />
+        </div>
+      <div class="field">
+        <label class="label" for="password">Create password</label>
+          <input
+            class="input"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Create a password"
+            required
+            minlength="8"
+            autocomplete="new-password"
+          />
+        </div>
+
+      <div class="field">
+        <label class="label" for="confirm_password">Confirm password</label>
+        <input
+          class="input"
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          placeholder="Confirm password"
+          required
+          minlength="8"
+          autocomplete="new-password"
+      />
+    </div>
+
+        <div class="field span-2">
+          <label class="label" for="report_email">Report recipient email</label>
+          <input
+            class="input"
+            type="email"
+            id="report_email"
+            name="report_email"
+            value="{{ form.report_email if form else '' }}"
+            placeholder="finance@company.com"
+            required
+            maxlength="255"
+            autocomplete="email"
+          />
+          <div class="hint">This address will receive optimisation reports.</div>
+        </div>
+
+        <div class="field span-2">
+          <label class="label" for="aws_region">AWS region</label>
+          <input
+            class="input mono"
+            id="aws_region"
+            name="aws_region"
+            value="{{ form.aws_region if form else 'eu-west-2' }}"
+            placeholder="eu-west-2"
+            required
+            maxlength="32"
+            autocomplete="off"
+          />
+          <div class="hint">Use one AWS region code, for example eu-west-2.</div>
+        </div>
+
+        <div class="field span-2">
+          <label class="label">Services to enable</label>
+
+          <div class="checkgrid">
+            <label class="check">
+              <input type="checkbox" name="services" value="s3"
+                {% if form and form.services and 's3' in form.services %}checked{% endif %}>
+              <span>S3</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" name="services" value="rds"
+                {% if form and form.services and 'rds' in form.services %}checked{% endif %}>
+              <span>RDS</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" name="services" value="ecs"
+                {% if form and form.services and 'ecs' in form.services %}checked{% endif %}>
+              <span>ECS</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" name="services" value="eks"
+                {% if form and form.services and 'eks' in form.services %}checked{% endif %}>
+              <span>EKS</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" name="services" value="spot"
+                {% if form and form.services and 'spot' in form.services %}checked{% endif %}>
+              <span>EC2 / Spot</span>
+            </label>
+          </div>
+
+          <div class="hint">Select the AWS services you want the platform to optimise.</div>
+        </div>
+
+        <div class="field span-2">
+          <label class="label" for="report_frequency">Report frequency</label>
+          <select class="input" id="report_frequency" name="report_frequency" required>
+            {% set freq = form.report_frequency if form else '' %}
+            <option value="" {% if not freq %}selected{% endif %} disabled>Select frequency</option>
+            <option value="daily" {% if freq == 'daily' %}selected{% endif %}>Daily</option>
+            <option value="weekly" {% if freq == 'weekly' %}selected{% endif %}>Weekly</option>
+            <option value="monthly" {% if freq == 'monthly' %}selected{% endif %}>Monthly</option>
+          </select>
+          <div class="hint">This controls the report schedule in the customer AWS account.</div>
+        </div>
+
+        <div class="field span-2">
+          <label class="label" for="notes">Notes</label>
+          <textarea
+            class="input textarea"
+            id="notes"
+            name="notes"
+            rows="4"
+            maxlength="2000"
+            placeholder="Optional notes about your AWS environment or optimisation goals"
+          >{{ form.notes if form else '' }}</textarea>
+          <div class="hint">Optional. Use this to tell us anything relevant about your environment.</div>
+        </div>
+
+      </div>
+
+      <div class="footer">
+        <div class="micro">
+          You’re not granting us access. Deployment runs in your AWS account and emails reports directly from your environment.
+        </div>
+        <button class="btn" type="submit">Submit application</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<style>
+  .page-wrap{ max-width:1100px; margin:0 auto; padding:42px 18px; }
+  .page-header{ margin-bottom:18px; }
+  .page-title{ margin:0 0 10px 0; font-size:52px; letter-spacing:-0.03em; line-height:1.05; }
+  .page-subtitle{ margin:0; color:rgba(255,255,255,0.72); line-height:1.55; max-width:78ch; }
+
+  .card{
+    max-width:980px;
+    border-radius:22px;
+    padding:24px;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.035);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    box-shadow:0 18px 42px rgba(0,0,0,0.35);
+  }
+
+  .alert{ border-radius:14px; padding:12px 14px; border:1px solid rgba(255,255,255,0.10); margin-bottom:16px; }
+  .alert-error{ background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.25); color:rgba(255,255,255,0.92); }
+  .alert ul{ margin:8px 0 0 18px; }
+
+  .form{ margin-top:2px; }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  .span-2{ grid-column:1 / -1; }
+
+  .field{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+
+  .label{ font-size:14px; color:rgba(255,255,255,0.80); }
+
+  .input{
+    width:100%;
+    box-sizing:border-box;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.18);
+    color:#fff;
+    padding:12px 14px;
+    outline:none;
+    line-height:1.2;
+    font:inherit;
+  }
+
+  .input:focus{
+    border-color:rgba(255,255,255,0.24);
+    box-shadow:0 0 0 4px rgba(255,255,255,0.06);
+  }
+
+  .textarea{
+    resize:vertical;
+    min-height:110px;
+  }
+
+  .mono{ font-variant-numeric:tabular-nums; letter-spacing:0.02em; }
+
+  .hint{ margin-top:-4px; font-size:13px; color:rgba(255,255,255,0.58); line-height:1.35; }
+
+  .checkgrid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:10px;
+  }
+
+  .check{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(0,0,0,0.16);
+    padding:10px 12px;
+    border-radius:14px;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .check input{
+    width:16px;
+    height:16px;
+    accent-color: rgba(59,130,246,0.92);
+  }
+
+  .check span{ color: rgba(255,255,255,0.88); font-size:14px; }
+
+  .footer{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px solid rgba(255,255,255,0.08);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+  }
+
+  .micro{ font-size:13px; color:rgba(255,255,255,0.55); max-width:560px; }
+
+  .btn{
+    border:0;
+    padding:11px 18px;
+    border-radius:14px;
+    background:rgba(59,130,246,0.92);
+    color:#fff;
+    font-weight:650;
+    cursor:pointer;
+    min-width:200px;
+  }
+
+  .btn:hover{ filter:brightness(1.05); }
+
+  @media (max-width: 860px){
+    .page-title{ font-size:40px; }
+    .card{ padding:18px; }
+    .grid{ grid-template-columns:1fr; }
+    .span-2{ grid-column:auto; }
+    .checkgrid{ grid-template-columns:1fr; }
+    .footer{ flex-direction:column; align-items:stretch; }
+    .btn{ width:100%; min-width:auto; }
+  }
+</style>
+{% endblock %}

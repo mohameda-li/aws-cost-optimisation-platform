@@ -1,0 +1,73 @@
+{
+  "customer": {
+    "customer_id": "",
+    "company_name": ""
+  },
+  "deployment": {
+    "aws_region": "eu-west-2",
+    "environment": "production",
+    "deployment_mode": "customer-owned"
+  },
+  "enabled_services": [
+    "s3",
+    "rds",
+    "ecs",
+    "eks",
+    "spot"
+  ],
+  "services": {
+    "s3": {
+      "enabled": true,
+      "target_buckets": [],
+      "default_days_since_access": 60
+    },
+    "rds": {
+      "enabled": true
+    },
+    "ecs": {
+      "enabled": true
+    },
+    "eks": {
+      "enabled": true
+    },
+    "spot": {
+      "enabled": true
+    }
+  },
+  "reporting": {
+    "report_formats": [
+      "html",
+      "json"
+    ],
+    "email_recipient": "",
+    "report_s3_bucket": ""
+  },
+  "schedule": {
+    "enabled": true,
+    "expression": "rate(7 days)"
+  },
+  "thresholds": {
+    "s3": {
+      "infrequent_access_days": 30,
+      "glacier_transition_days": 90
+    },
+    "rds": {
+      "cpu_low_threshold": 20,
+      "idle_days": 14
+    },
+    "ecs": {
+      "cpu_low_threshold": 20,
+      "memory_low_threshold": 25
+    },
+    "eks": {
+      "node_utilisation_threshold": 30
+    },
+    "spot": {
+      "interruption_risk_level": "medium"
+    }
+  },
+  "tags": {
+    "project": "finops-automation",
+    "owner": ""
+  }
+}

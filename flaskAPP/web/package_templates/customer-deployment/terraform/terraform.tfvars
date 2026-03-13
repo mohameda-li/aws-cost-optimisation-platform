@@ -1,0 +1,9 @@
+aws_region                   = "eu-west-2"
+customer_id                  = "org_12"
+company_name                 = "Acme Ltd"
+report_bucket_name           = "acme-ltd-finops-reports"
+notification_email           = "ops@acme.com"
+schedule_expression          = "rate(7 days)"
+s3_default_days_since_access = 60
+s3_target_buckets            = ""
+enabled_services             = ["s3", "rds"]

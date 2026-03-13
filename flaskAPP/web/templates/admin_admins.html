@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+
+<section style="padding: 4rem 6rem; max-width: 1200px;">
+
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap: 1rem; margin-bottom: 2rem;">
+    <h1 style="font-size: 2.4rem; margin: 0;">
+      Manage Admins
+    </h1>
+
+    <a href="{{ url_for('admin_dashboard') }}"
+       style="text-decoration:none; padding: 0.55rem 0.9rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+      Back to Dashboard
+    </a>
+  </div>
+
+  <!-- Add Admin -->
+  <div style="margin-bottom: 1.5rem; padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+    <h2 style="margin: 0 0 0.75rem 0; font-size: 1.1rem; color: #e8eef6;">Add Admin</h2>
+
+    <form method="post" action="{{ url_for('admin_create_admin') }}"
+          style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0;">
+
+      <input
+        type="email"
+        name="email"
+        placeholder="New admin email"
+        style="padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color:#e8eef6; min-width: 260px;"
+        required
+      />
+
+      <input
+        type="password"
+        name="password"
+        placeholder="New password"
+        style="padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color:#e8eef6; min-width: 220px;"
+        required
+        minlength="8"
+      />
+
+      <input
+        type="password"
+        name="confirm_password"
+        placeholder="Confirm"
+        style="padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color:#e8eef6; min-width: 220px;"
+        required
+        minlength="8"
+      />
+
+      <button type="submit" style="padding: 0.55rem 0.9rem; border-radius: 12px;">
+        Add
+      </button>
+    </form>
+
+    {% if error %}
+      <p style="margin: 0.75rem 0 0 0; color: #f87171; font-size: 0.95rem;">{{ error }}</p>
+    {% endif %}
+
+    {% if success %}
+      <p style="margin: 0.75rem 0 0 0; color: #86efac; font-size: 0.95rem;">{{ success }}</p>
+    {% endif %}
+  </div>
+
+  {% if admins_list|length == 0 %}
+    <p>No admin accounts found.</p>
+  {% else %}
+
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;">
+        <th style="padding: 0.75rem;">Admin ID</th>
+        <th style="padding: 0.75rem;">Email</th>
+        <th style="padding: 0.75rem;">Created</th>
+        <th style="padding: 0.75rem;">Change Password</th>
+        <th style="padding: 0.75rem;">Delete</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for ad in admins_list %}
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 0.75rem; font-family: monospace;">
+          {{ ad.admin_id }}
+        </td>
+
+        <td style="padding: 0.75rem;">
+          {{ ad.email }}
+          {% if session.get("admin_id") == ad.admin_id %}
+            <span style="margin-left: 0.5rem; font-size: 0.85rem; color:#94a3b8;">(you)</span>
+          {% endif %}
+        </td>
+
+        <td style="padding: 0.75rem; font-size: 0.9rem; color: #94a3b8;">
+          {{ ad.created_at.strftime('%Y-%m-%d') if ad.created_at else '—' }}
+        </td>
+
+        <td style="padding: 0.75rem;">
+          <form method="post" action="{{ url_for('admin_update_admin_password') }}" style="display:flex; gap:10px; align-items:center; margin:0; flex-wrap:wrap;">
+            <input type="hidden" name="admin_id" value="{{ ad.admin_id }}">
+
+            <input
+              type="password"
+              name="new_password"
+              placeholder="New password"
+              style="padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color:#e8eef6; min-width: 220px;"
+              required
+              minlength="6"
+            />
+
+            <input
+              type="password"
+              name="confirm_password"
+              placeholder="Confirm"
+              style="padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color:#e8eef6; min-width: 220px;"
+              required
+              minlength="6"
+            />
+
+            <button type="submit" style="padding: 0.55rem 0.9rem; border-radius: 12px;">
+              Update
+            </button>
+          </form>
+        </td>
+
+        <td style="padding: 0.75rem;">
+          <form method="post" action="{{ url_for('admin_delete_admin') }}" style="margin:0;">
+            <input type="hidden" name="admin_id" value="{{ ad.admin_id }}">
+            <button
+              type="submit"
+              {% if session.get("admin_id") == ad.admin_id %}
+                disabled
+                style="opacity:0.4; cursor:not-allowed; padding: 0.55rem 0.9rem; border-radius: 12px;"
+              {% else %}
+                style="padding: 0.55rem 0.9rem; border-radius: 12px;"
+              {% endif %}
+            >
+              Delete
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% endif %}
+</section>
+
+{% endblock %}

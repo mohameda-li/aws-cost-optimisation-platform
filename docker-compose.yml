@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-RootPassChangeMe}
+      MYSQL_DATABASE: ${DB_NAME:-finops}
+      MYSQL_USER: ${DB_USER:-finops_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-FinopsApp#2026!}
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  web:
+    build:
+      context: .
+      dockerfile: flaskAPP/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-dev-secret-change-later}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-finops_app}
+      DB_PASSWORD: ${DB_PASSWORD:-FinopsApp#2026!}
+      DB_NAME: ${DB_NAME:-finops}
+    ports:
+      - "5050:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

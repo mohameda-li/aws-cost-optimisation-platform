@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .onb-wrap { display: grid; gap: 1rem; }
+  .onb-muted { color: #94a3b8; margin-top: .35rem; }
+  .onb-pillrow { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .6rem;
+    border-radius: 999px;
+    border: 1px solid #263244;
+    background: #0b1220;
+    color: #e8eef6;
+    font-size: .85rem;
+  }
+  .onb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .stepbox, .info-card, .callout {
+    border: 1px solid #263244;
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(11,18,32,.35);
+  }
+  .stepbox h2, .info-card h2, .callout b { margin: 0 0 .45rem 0; }
+  .steps { margin: .9rem 0 0; padding: 0; list-style: none; display: grid; gap: .7rem; }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: .85rem;
+    padding: .85rem;
+    border-radius: 14px;
+    border: 1px solid #263244;
+    background: rgba(11,18,32,.55);
+  }
+  .stepnum {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #263244;
+    background: #0b1220;
+    color: #e8eef6;
+    font-weight: 800;
+  }
+  .step p { margin: 0; font-size: 1rem; line-height: 1.35; }
+  .step small { display: block; margin-top: .25rem; color: #94a3b8; line-height: 1.4; }
+  .info-list { margin: .85rem 0 0; padding-left: 1rem; color: #e8eef6; }
+  .info-list li + li { margin-top: .45rem; }
+  .service-grid {
+    margin-top: .85rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+  }
+  .service-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    padding: .85rem;
+    border-radius: 14px;
+    border: 1px solid #263244;
+    background: rgba(11,18,32,.55);
+    color: #e8eef6;
+  }
+  .service-item img {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    object-fit: contain;
+    opacity: 0.95;
+  }
+  .service-item b {
+    display: block;
+    margin-bottom: .2rem;
+  }
+  .service-item span {
+    display: block;
+    color: #94a3b8;
+    line-height: 1.35;
+    font-size: .95rem;
+  }
+  .bundle-tree {
+    margin: .75rem 0 0;
+    white-space: pre-wrap;
+    background: #0b1220;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #263244;
+    color: #e8eef6;
+    overflow-x: auto;
+  }
+  .cmds {
+    margin: .75rem 0 0;
+    white-space: pre-wrap;
+    background: #0b1220;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #263244;
+    color: #e8eef6;
+    overflow-x: auto;
+  }
+  .kv { margin-top: .55rem; display: grid; gap: .4rem; }
+  .kv div { color: #e8eef6; }
+  .kv span { color: #94a3b8; }
+
+  @media (max-width: 900px) {
+    .onb-grid { grid-template-columns: 1fr; }
+    .service-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="onb-wrap">
+  <div class="card">
+    <h1>Onboarding: Customer deployment bundle</h1>
+
+    <div class="callout" style="margin-top:.75rem;">
+      <b>How this works</b>
+      <div class="kv">
+        <div><span>•</span> Once your application is approved, you download a ready-made deployment bundle.</div>
+        <div><span>•</span> You deploy it into your own AWS account using Terraform.</div>
+        <div><span>•</span> After that, the platform runs automatically on the schedule you chose and saves reports to your S3 bucket.</div>
+      </div>
+    </div>
+
+    <div class="onb-pillrow">
+      <span class="pill">Customer-owned deployment</span>
+      <span class="pill">Terraform provisioned</span>
+      <span class="pill">Runner + optimisers</span>
+      <span class="pill">HTML + JSON reports</span>
+      <span class="pill">Scheduled with EventBridge</span>
+    </div>
+
+    <p class="onb-muted">
+      This page shows the customer deployment process and what is included in your generated bundle.
+    </p>
+  </div>
+
+  <div class="stepbox">
+    <h2>Deployment steps</h2>
+    <p class="onb-muted" style="margin:0;">
+      Expected time: around 10 to 20 minutes if you already have AWS access to deploy the required resources.
+    </p>
+
+    <ul class="steps">
+      <li class="step">
+        <div class="stepnum">1</div>
+        <div>
+          <p>Complete your application and onboarding details.</p>
+          <small>You choose your AWS region, reporting schedule and the services you want the platform to check.</small>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="stepnum">2</div>
+        <div>
+          <p>Download your generated customer deployment bundle.</p>
+          <small>The bundle includes everything you need to deploy the platform in your AWS account.</small>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="stepnum">3</div>
+        <div>
+          <p>Check the configuration files.</p>
+          <small>Make sure the AWS region, schedule, report bucket and selected services are correct before you deploy.</small>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="stepnum">4</div>
+        <div>
+          <p>Deploy the stack with Terraform.</p>
+          <small>Terraform creates the Lambdas, IAM role, schedule, log groups and report bucket in your account.</small>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="stepnum">5</div>
+        <div>
+          <p>Let the platform run automatically.</p>
+          <small>Each scheduled run checks your selected services, estimates savings and uploads reports to your S3 bucket under <code>reports/&lt;customer&gt;/&lt;run_id&gt;</code>.</small>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="onb-grid">
+    <div class="info-card">
+      <h2>What gets deployed</h2>
+      <ul class="info-list">
+        <li>One runner Lambda that coordinates the checks</li>
+        <li>Only the optimiser Lambdas you selected during onboarding</li>
+        <li>IAM execution role and permissions</li>
+        <li>CloudWatch log groups</li>
+        <li>EventBridge schedule</li>
+        <li>S3 bucket for saved reports</li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <h2>Supported optimisation engines</h2>
+      <div class="service-grid">
+        <div class="service-item">
+          <img src="{{ url_for('static', filename='images/s3.png') }}" alt="S3">
+          <div>
+            <b>Amazon S3</b>
+            <span>Checks for cheaper storage options for data that is accessed less often.</span>
+          </div>
+        </div>
+
+        <div class="service-item">
+          <img src="{{ url_for('static', filename='images/rds.png') }}" alt="RDS">
+          <div>
+            <b>Amazon RDS</b>
+            <span>Looks for database instances that may be larger than they need to be.</span>
+          </div>
+        </div>
+
+        <div class="service-item">
+          <img src="{{ url_for('static', filename='images/ecs.png') }}" alt="ECS">
+          <div>
+            <b>Amazon ECS</b>
+            <span>Finds container services that may be using more capacity than needed.</span>
+          </div>
+        </div>
+
+        <div class="service-item">
+          <img src="{{ url_for('static', filename='images/eks.png') }}" alt="EKS">
+          <div>
+            <b>Amazon EKS</b>
+            <span>Checks whether Kubernetes node capacity can be reduced safely.</span>
+          </div>
+        </div>
+
+        <div class="service-item" style="grid-column: 1 / -1;">
+          <img src="{{ url_for('static', filename='images/spot.png') }}" alt="EC2 Spot">
+          <div>
+            <b>EC2 Spot Instances</b>
+            <span>Highlights workloads that may be suitable for lower-cost Spot pricing.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="onb-grid">
+    <div class="info-card">
+      <h2>What is in your download</h2>
+      <ul class="info-list">
+        <li>Terraform files to deploy the platform</li>
+        <li>The runner and selected optimiser packages</li>
+        <li>Your customer configuration</li>
+        <li>Simple deployment and troubleshooting guides</li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <h2>Deploy commands</h2>
+      <div class="cmds">cd customer-deployment/terraform
+terraform init
+terraform apply</div>
+
+      <p class="onb-muted" style="margin-top:.75rem;">
+        Your main settings are already filled in for you, so in most cases you only need to review them and deploy.
+      </p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h2>Runner workflow</h2>
+    <ul class="info-list">
+      <li>EventBridge starts the runner Lambda on your chosen schedule.</li>
+      <li>The runner checks which services are enabled for your account.</li>
+      <li>Each selected optimiser analyses its service and estimates possible savings.</li>
+      <li>The runner combines the results into one report.</li>
+      <li>Reports are uploaded to S3 as HTML and JSON files.</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <b>Report output</b>
+    <div class="kv">
+      <div><span>•</span> An HTML report that is easy to read.</div>
+      <div><span>•</span> A JSON report for automation or further analysis.</div>
+      <div><span>•</span> Both are stored in S3 under <code>reports/&lt;customer&gt;/&lt;run_id&gt;.html</code> and <code>reports/&lt;customer&gt;/&lt;run_id&gt;.json</code>.</div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

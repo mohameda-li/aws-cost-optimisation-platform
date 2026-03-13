@@ -1,0 +1,8 @@
+.git
+.gitignore
+.DS_Store
+__pycache__/
+*.py[cod]
+.env
+.env.*
+flaskAPP/web/generated_bundles/

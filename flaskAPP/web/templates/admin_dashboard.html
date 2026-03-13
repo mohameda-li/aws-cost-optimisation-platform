@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+
+<section style="padding: 4rem 6rem; max-width: 1200px;">
+
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap: 1rem; margin-bottom: 2rem;">
+    <h1 style="font-size: 2.4rem; margin: 0;">
+      Admin Dashboard
+    </h1>
+
+    <div style="display:flex; gap: 0.75rem; align-items:center;">
+      {% if session.get("admin_id") %}
+        <a href="{{ url_for('admin_applications') }}"
+           style="text-decoration:none; padding: 0.55rem 0.9rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+          Manage Applications
+        </a>
+
+        <a href="{{ url_for('admin_manage_admins') }}"
+           style="text-decoration:none; padding: 0.55rem 0.9rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+          Manage Admins
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <ul style="margin: 0 0 2.5rem 1.2rem; line-height: 1.9;">
+    <li><b>Admins:</b> {{ admins }}</li>
+    <li><b>Applications:</b> {{ applications }}</li>
+    <li><b>Onboardings:</b> {{ onboardings }}</li>
+  </ul>
+
+
+</section>
+
+{% endblock %}

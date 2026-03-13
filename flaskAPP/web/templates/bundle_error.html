@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+<section style="padding: 4rem 6rem; max-width: 900px;">
+  <div class="card" style="padding: 2rem; border-radius: 18px;">
+    <h1 style="margin-top: 0; font-size: 2rem;">{{ title }}</h1>
+    <p style="opacity: 0.8; margin-bottom: 1.5rem;">
+      {{ message }}
+    </p>
+
+    <a
+      href="{{ url_for('customer_dashboard') }}"
+      style="
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        padding:0.75rem 1.1rem;
+        border-radius:12px;
+        text-decoration:none;
+        font-weight:600;
+        border:1px solid rgba(255,255,255,0.14);
+        background:rgba(255,255,255,0.06);
+        color:inherit;
+      "
+    >
+      Back to Dashboard
+    </a>
+  </div>
+</section>
+{% endblock %}

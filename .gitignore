@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+venv/
+.venv/
+env/
+
+# Flask / env
+.env
+.env.local
+*.env
+.env.*
+
+# Generated bundles (customer deployments)
+flaskAPP/web/generated_bundles/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+*.tfplan
+
+# Logs / temp
+*.log
+/tmp/
+.coverage
+htmlcov/
+
+# Docker
+*.pid
+
+# Optional: uncomment if you keep local DB or test data out of repo
+# flaskAPP/web/*.db
+# flaskAPP/data/

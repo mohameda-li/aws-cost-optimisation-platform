@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-wrap">
+  <div class="page-header">
+    <h1 class="page-title">Application Status</h1>
+    <p class="page-subtitle">Enter your Application ID and Contact Email to view your application details.</p>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('status_lookup') }}" class="form">
+      <div class="form-row">
+        <label class="label" for="application_id">Application ID</label>
+        <input
+          class="input"
+          type="text"
+          id="application_id"
+          name="application_id"
+          inputmode="numeric"
+          value="{{ application_id|default('') }}"
+          required
+        />
+      </div>
+
+      <div class="form-row">
+        <label class="label" for="contact_email">Contact Email</label>
+        <input
+          class="input"
+          type="email"
+          id="contact_email"
+          name="contact_email"
+          value="{{ contact_email|default('') }}"
+          required
+        />
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit">Check</button>
+      </div>
+    </form>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-error">
+      {{ error }}
+    </div>
+  {% endif %}
+
+  {% if app_row %}
+    <div class="card result-card">
+      <h2 class="result-title">Result</h2>
+
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="result-label">Application ID</div>
+          <div class="result-value">{{ app_row.application_id }}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Company</div>
+          <div class="result-value">{{ app_row.organisation_name }}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Status</div>
+          <div class="result-value">
+            <span class="badge badge-{{ app_row.status }}">{{ app_row.status }}</span>
+          </div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Created</div>
+          <div class="result-value">{{ app_row.created_at }}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Contact Name</div>
+          <div class="result-value">{{ app_row.contact_name }}</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-label">Contact Email</div>
+          <div class="result-value">{{ app_row.contact_email }}</div>
+        </div>
+
+        {% if app_row.aws_region %}
+        <div class="result-item">
+          <div class="result-label">AWS Region</div>
+          <div class="result-value">{{ app_row.aws_region }}</div>
+        </div>
+        {% endif %}
+
+        {% if app_row.enabled_services %}
+        <div class="result-item">
+          <div class="result-label">Enabled Services</div>
+          <div class="result-value">{{ app_row.enabled_services }}</div>
+        </div>
+        {% endif %}
+
+        {% if app_row.report_frequency %}
+        <div class="result-item">
+          <div class="result-label">Report Frequency</div>
+          <div class="result-value">{{ app_row.report_frequency }}</div>
+        </div>
+        {% endif %}
+
+        {% if app_row.report_emails %}
+        <div class="result-item">
+          <div class="result-label">Report Recipient(s)</div>
+          <div class="result-value">{{ app_row.report_emails }}</div>
+        </div>
+        {% endif %}
+
+        {% if app_row.notes %}
+        <div class="result-item result-item-wide">
+          <div class="result-label">Notes</div>
+          <div class="result-value">{{ app_row.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+  .page-wrap{max-width:980px;margin:0 auto;padding:28px 18px;}
+  .page-header{margin-bottom:18px;}
+  .page-title{font-size:42px;letter-spacing:-0.02em;margin:0 0 10px 0;}
+  .page-subtitle{margin:0;color:rgba(255,255,255,0.7);max-width:70ch;line-height:1.5;}
+  .card{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.09);
+    border-radius:18px;
+    padding:18px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+  .form{display:grid;gap:14px;}
+  .form-row{display:grid;gap:8px;}
+  .label{font-size:14px;color:rgba(255,255,255,0.75);}
+  .input{
+    width:100%;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.22);
+    color:#fff;
+    padding:12px 14px;
+    outline:none;
+  }
+  .input:focus{border-color:rgba(255,255,255,0.22);box-shadow:0 0 0 4px rgba(255,255,255,0.06);}
+  .actions{display:flex;justify-content:flex-start;margin-top:2px;}
+  .btn{
+    border:0;
+    padding:11px 18px;
+    border-radius:14px;
+    background:rgba(59,130,246,0.92);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn:hover{filter:brightness(1.05);}
+  .alert{margin-top:14px;border-radius:14px;padding:12px 14px;border:1px solid rgba(255,255,255,0.10);}
+  .alert-error{background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.25);color:rgba(255,255,255,0.9);}
+  .result-card{margin-top:18px;}
+  .result-title{margin:0 0 14px 0;font-size:26px;}
+  .result-grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:14px;
+  }
+  .result-item{
+    padding:12px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.08);
+    background:rgba(0,0,0,0.16);
+  }
+  .result-item-wide{grid-column:1 / -1;}
+  .result-label{font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:6px;}
+  .result-value{font-size:16px;color:rgba(255,255,255,0.92);word-break:break-word;}
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:13px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.06);
+  }
+  .badge-pending{background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.22);}
+  .badge-approved{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.22);}
+  .badge-rejected{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.22);}
+  @media (max-width:720px){
+    .page-title{font-size:34px;}
+    .result-grid{grid-template-columns:1fr;}
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,2 @@
+pricing_model,vcpu_per_hour,gb_per_hour
+fargate_on_demand,0.04048,0.004445

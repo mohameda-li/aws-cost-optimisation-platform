@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+
+<section style="padding: 4rem 6rem; max-width: 1200px;">
+  <h1 style="font-size: 2.4rem; margin-bottom: 2rem;">
+    Admin Dashboard
+  </h1>
+
+  {% if apps|length == 0 %}
+    <p>No applications submitted yet.</p>
+  {% else %}
+
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;">
+        <th style="padding: 0.75rem;">Company</th>
+        <th style="padding: 0.75rem;">Contact</th>
+        <th style="padding: 0.75rem;">Email</th>
+        <th style="padding: 0.75rem;">Status</th>
+        <th style="padding: 0.75rem;">Created</th>
+        <th style="padding: 0.75rem;">Update</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for a in apps %}
+      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <td style="padding: 0.75rem;">{{ a.organisation_name }}</td>
+        <td style="padding: 0.75rem;">{{ a.contact_name }}</td>
+        <td style="padding: 0.75rem;">{{ a.contact_email }}</td>
+
+        <td style="padding: 0.75rem;">
+          <form method="post" action="{{ url_for('admin_update_status') }}">
+            <input type="hidden" name="application_id" value="{{ a.application_id }}">
+
+            <select name="status">
+              <option value="pending" {% if a.status == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="approved" {% if a.status == 'approved' %}selected{% endif %}>Approved</option>
+              <option value="rejected" {% if a.status == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </td>
+
+        <td style="padding: 0.75rem; font-size: 0.9rem; color: #94a3b8;">
+          {# created_at might be datetime or string depending on connector settings #}
+          {% if a.created_at %}
+            {{ a.created_at.strftime("%Y-%m-%d") if a.created_at.strftime is defined else a.created_at|string|truncate(10, True, '') }}
+          {% endif %}
+        </td>
+
+        <td style="padding: 0.75rem;">
+            <button type="submit">
+              Save
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% endif %}
+</section>
+
+{% endblock %}

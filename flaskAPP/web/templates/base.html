@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "FinOps Automation Platform" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="/favicon.ico?v=1">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png?v=1">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=1">
+    <link rel="manifest" href="/static/site.webmanifest">
+  </head>
+
+  <body class="{% if page_type == 'internal' %}internal{% else %}marketing{% endif %}">
+
+    <header class="nav">
+      <div class="nav-left">
+        <a href="{{ url_for('index') }}"
+           style="display:inline-flex; align-items:center; gap:0.2rem; text-decoration:none;">
+          <span class="logo">Fin</span><span class="logo-accent" style="color:#38bdf8;">Ops</span><span class="logo-accent">Automation</span>
+        </a>
+      </div>
+
+      <nav class="nav-right">
+        {% if session.get("user_role") == "admin" %}
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('info') }}">Information</a>
+          <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+          <a href="{{ url_for('logout') }}"
+             style="padding: 0.45rem 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);">
+            Logout
+          </a>
+
+        {% elif session.get("user_role") == "customer" %}
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('info') }}">Information</a>
+          <a href="{{ url_for('onboarding') }}">Onboarding</a>
+          <a href="{{ url_for('customer_dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('logout') }}"
+             style="padding: 0.45rem 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);">
+            Logout
+          </a>
+
+        {% else %}
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('info') }}">Information</a>
+          <a href="{{ url_for('apply_form') }}">Apply</a>
+          <a href="{{ url_for('onboarding') }}">Onboarding</a>
+          <a href="{{ url_for('login_page') }}">Login</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    {% if session.get("user_role") == "admin" %}
+      <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); color:#94a3b8; font-size: 0.9rem;">
+        Logged in as admin <b style="color:#e8eef6;">{{ session.get("admin_email") }}</b>
+      </div>
+    {% elif session.get("user_role") == "customer" %}
+      <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); color:#94a3b8; font-size: 0.9rem;">
+        Logged in as <b style="color:#e8eef6;">{{ session.get("customer_email") }}</b>
+      </div>
+    {% endif %}
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <p>
+        Secure. Serverless. AWS-native FinOps automation.
+      </p>
+    </footer>
+
+  </body>
+</html>

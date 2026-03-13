@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section style="padding: 4rem 6rem; max-width: 1200px;">
+
+  <div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2.4rem; margin: 0 0 0.75rem 0;">Cloud storage and why it matters</h1>
+    <p style="margin: 0; line-height: 1.75; color: rgba(232, 238, 246, 0.92);">
+      Cloud storage is the way organisations keep data in the cloud rather than on local servers. It includes files,
+      logs, backups, databases, container images and system metrics. The benefit is flexibility and scale, but the trade off
+      is that storage can grow quietly, and the cost can rise without anyone noticing until it becomes significant.
+    </p>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.25rem;">
+    <h2 style="margin-top: 0;">How fast is cloud data growing</h2>
+    <p style="margin: 0 0 0.75rem 0; line-height: 1.75;">
+      Global data volumes are rising quickly, driven by analytics, security logging, AI workloads and always on services.
+      Storage is often the easiest resource to ignore because nothing breaks when it increases, but the bill still grows.
+    </p>
+
+    <!-- Chart (left) + explanation (right) -->
+    <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items:center; margin-top: 1rem;">
+      <div style="display:flex; justify-content:center;">
+        <img
+          src="{{ url_for('static', filename='images/barchart.png') }}"
+          alt="Global data generated annually (Zettabytes)"
+          style="width: 100%; max-width: 720px; height:auto; border-radius: 18px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); padding: 12px;"
+        />
+      </div>
+
+      <div>
+        <h3 style="margin: 0 0 0.6rem 0;">Zettabyte-scale growth</h3>
+        <p style="margin: 0; line-height: 1.75; color: rgba(232, 238, 246, 0.92);">
+          This trend shows how quickly global data creation is accelerating. In practice, a large portion of that growth
+          becomes operational storage: logs, backups, analytics outputs and application data. The result is that storage
+          spend can increase quietly over time unless retention, tiering and rightsizing are reviewed continuously.
+        </p>
+        <p style="margin: 0.75rem 0 0 0; color:#94a3b8; font-size: 0.9rem; line-height: 1.6;">
+          Source: “Amount of Data Created Daily” (2025), IDC / Global Datasphere (summary figure).
+        </p>
+      </div>
+    </div>
+
+    <!-- Trend cards with icons -->
+    <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem;">
+
+      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img
+            src="{{ url_for('static', filename='images/barchart.png') }}"
+            alt="ZB scale"
+            style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+          />
+          <div style="font-size: 1.6rem; font-weight: 700;">ZB scale</div>
+        </div>
+        <div style="margin-top: 0.25rem; color:#94a3b8; line-height: 1.5;">
+          Global data creation is measured in zettabytes and continues to rise year on year
+        </div>
+      </div>
+
+      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img
+            src="{{ url_for('static', filename='images/cloudop.png') }}"
+            alt="Log growth"
+            style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+          />
+          <div style="font-size: 1.6rem; font-weight: 700;">Log growth</div>
+        </div>
+        <div style="margin-top: 0.25rem; color:#94a3b8; line-height: 1.5;">
+          Observability and security logging can grow rapidly across accounts, regions and environments
+        </div>
+      </div>
+
+      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img
+            src="{{ url_for('static', filename='images/rds.png') }}"
+            alt="Backups"
+            style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+          />
+          <div style="font-size: 1.6rem; font-weight: 700;">Backups</div>
+        </div>
+        <div style="margin-top: 0.25rem; color:#94a3b8; line-height: 1.5;">
+          Backups and snapshots are essential, but retention can easily drift beyond what is needed
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin: 1rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+      Note: these are high level trends intended to explain the problem. Your report focuses on measurable savings in your AWS account.
+    </p>
+  </div>
+
+  <div style="margin: 2.25rem 0 1rem 0;">
+    <h2 style="margin: 0;">What the platform covers</h2>
+    <p style="margin: 0.5rem 0 0 0; line-height: 1.75; color: rgba(232, 238, 246, 0.92);">
+      The platform scans five widely used AWS services and produces an email report with recommendations, estimated monthly savings,
+      and practical next steps. Each service is analysed using a consistent pipeline, so results are easy to compare.
+    </p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;">
+
+    <div class="card" style="margin: 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 0.35rem;">
+        <img
+          src="{{ url_for('static', filename='images/s3.png') }}"
+          alt="S3"
+          style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+        />
+        <h3 style="margin: 0;">Amazon S3</h3>
+      </div>
+      <p style="margin: 0; line-height: 1.75;">
+        Object storage used for logs, backups, files, data lakes and application assets. The scan focuses on inactive data,
+        storage class opportunities and buckets that may be costing money without delivering ongoing value.
+      </p>
+      <p style="margin: 0.75rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+        Example recommendations: storage tiering, lifecycle policies and retention clean up.
+      </p>
+    </div>
+
+    <div class="card" style="margin: 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 0.35rem;">
+        <img
+          src="{{ url_for('static', filename='images/rds.png') }}"
+          alt="RDS"
+          style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+        />
+        <h3 style="margin: 0;">Amazon RDS</h3>
+      </div>
+      <p style="margin: 0; line-height: 1.75;">
+        Managed relational databases used for production systems, internal tools and analytics. The scan targets signs of
+        overprovisioning and recommends rightsizing where performance risk is low.
+      </p>
+      <p style="margin: 0.75rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+        Example recommendations: smaller instance classes, stopping unused environments and reviewing storage allocation.
+      </p>
+    </div>
+
+    <div class="card" style="margin: 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 0.35rem;">
+        <img
+          src="{{ url_for('static', filename='images/ecs.png') }}"
+          alt="ECS"
+          style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+        />
+        <h3 style="margin: 0;">Amazon ECS</h3>
+      </div>
+      <p style="margin: 0; line-height: 1.75;">
+        Container orchestration for microservices and batch tasks. The scan highlights services with low utilisation and
+        oversized CPU and memory settings, which can lead to wasted capacity.
+      </p>
+      <p style="margin: 0.75rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+        Example recommendations: task rightsizing, scaling policy checks and idle service detection.
+      </p>
+    </div>
+
+    <div class="card" style="margin: 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 0.35rem;">
+        <img
+          src="{{ url_for('static', filename='images/eks.png') }}"
+          alt="EKS"
+          style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+        />
+        <h3 style="margin: 0;">Amazon EKS</h3>
+      </div>
+      <p style="margin: 0; line-height: 1.75;">
+        Managed Kubernetes for containerised workloads. The scan focuses on cluster efficiency signals, node capacity drift
+        and opportunities to reduce overprovisioned compute.
+      </p>
+      <p style="margin: 0.75rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+        Example recommendations: node rightsizing signals, scaling adjustments and capacity reduction opportunities.
+      </p>
+    </div>
+
+    <div class="card" style="margin: 0; grid-column: 1 / -1;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 0.35rem;">
+        <img
+          src="{{ url_for('static', filename='images/spot.png') }}"
+          alt="EC2 Spot"
+          style="width:22px; height:22px; flex:0 0 22px; object-fit:contain; opacity:0.95;"
+        />
+        <h3 style="margin: 0;">EC2 Spot Instances</h3>
+      </div>
+      <p style="margin: 0; line-height: 1.75;">
+        Discounted compute capacity for interruption tolerant workloads. The scan identifies workloads that may be suitable
+        for Spot and estimates potential savings compared with on demand pricing.
+      </p>
+      <p style="margin: 0.75rem 0 0 0; color:#94a3b8; line-height: 1.6;">
+        Example recommendations: Spot adoption for eligible workloads, diversification strategies and interruption planning.
+      </p>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 2.25rem; display:flex; gap: 0.75rem; flex-wrap: wrap; align-items:center;">
+    <a href="{{ url_for('apply_form') }}"
+       style="text-decoration:none; padding: 0.75rem 1.1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);">
+      Apply for access
+    </a>
+
+    <a href="{{ url_for('onboarding') }}"
+       style="text-decoration:none; padding: 0.75rem 1.1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);">
+      View onboarding steps
+    </a>
+
+    <span style="color:#94a3b8;">
+      You stay in control, no credentials stored, read only role based access.
+    </span>
+  </div>
+
+</section>
+
+{% endblock %}
