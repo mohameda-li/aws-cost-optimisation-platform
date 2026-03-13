@@ -18,6 +18,21 @@ env/
 .env.local
 *.env
 .env.*
+instance/
+.webassets-cache
+
+# Coverage / test artifacts
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.hypothesis/
+.tox/
+.nox/
+coverage.xml
+nosetests.xml
+*.cover
+*.py.cover
 
 # Generated bundles (customer deployments)
 flaskAPP/web/generated_bundles/
@@ -28,6 +43,7 @@ flaskAPP/web/generated_bundles/
 .DS_Store
 *.swp
 *.swo
+.ipynb_checkpoints/
 
 # Terraform
 .terraform/
@@ -39,12 +55,7 @@ flaskAPP/web/generated_bundles/
 # Logs / temp
 *.log
 /tmp/
-.coverage
-htmlcov/
 
-# Docker
+# Docker / process
 *.pid
 
-# Optional: uncomment if you keep local DB or test data out of repo
-# flaskAPP/web/*.db
-# flaskAPP/data/

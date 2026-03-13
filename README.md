@@ -1,8 +1,6 @@
-# FinOps Automation Platform
+# AWS Cost Optimisation Platform
 
-FinOps Automation Platform is a customer-deployable AWS cost optimisation system.
-The web application manages customer onboarding and bundle generation. Customers then
-deploy the generated bundle into their own AWS account with Terraform.
+A serverless AWS FinOps automation platform designed to detect and reduce cloud cost waste across ECS, EKS, RDS, S3, and Spot Instances. The web application manages customer onboarding and bundle generation, and customers deploy the generated bundle into their own AWS account with Terraform.
 
 ## Repository Layout
 
