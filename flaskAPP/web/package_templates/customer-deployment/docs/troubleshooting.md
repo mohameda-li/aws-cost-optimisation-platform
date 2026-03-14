@@ -12,7 +12,7 @@ Lambda issues
 -------------
 
 - Check CloudWatch logs for the runner and optimiser functions
-- Confirm the required optimiser was included in the generated bundle
+- Confirm the required service package was included in the generated bundle
 - Confirm the report bucket exists and is writable
 
 No findings in report

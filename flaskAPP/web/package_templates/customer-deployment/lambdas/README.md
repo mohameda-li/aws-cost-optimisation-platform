@@ -1,9 +1,14 @@
-This directory is populated automatically when a customer bundle is generated.
+Lambda Packages
+===============
 
-The source of truth for Lambda code is:
-- `src/runner`
-- `src/optimisers`
+This folder contains the packaged AWS Lambda functions needed for your deployment.
 
-The generated bundle will contain:
-- `runner.zip`
-- one optimiser zip per selected service
+What is included
+----------------
+
+- `runner.zip`, which coordinates the optimisation run
+- the optimiser packages for the AWS services selected during onboarding
+
+You do not need to edit these files manually.
+
+Terraform uses the packages in this folder during deployment.

@@ -26,6 +26,8 @@ Before applying, review:
 - report bucket name
 - schedule expression
 
+If these values already match your requirements, you can continue without making changes.
+
 After deployment
 ----------------
 

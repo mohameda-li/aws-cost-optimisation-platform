@@ -1,7 +1,7 @@
 Architecture Overview
 =====================
 
-This deployment contains a serverless AWS cost optimisation workflow.
+This deployment contains a serverless AWS cost optimisation workflow that runs inside your AWS account.
 
 Components
 ----------
@@ -17,10 +17,10 @@ How it works
 ------------
 
 1. EventBridge triggers the runner on the configured schedule
-2. The runner loads the enabled services
-3. The selected optimisers analyse usage and estimate savings
-4. The runner aggregates the results
-5. Reports are generated and uploaded to S3
+2. The runner checks the selected AWS services
+3. The optimisation functions estimate possible savings
+4. The results are combined into a report
+5. The report is uploaded to S3
 
 Report formats
 --------------

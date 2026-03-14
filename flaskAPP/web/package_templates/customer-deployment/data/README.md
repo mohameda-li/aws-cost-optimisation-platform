@@ -1,6 +1,8 @@
-This directory is populated automatically when a customer bundle is generated.
+Reference Data
+==============
 
-The source of truth for pricing data is:
-- `src/data`
+This folder contains the pricing reference data used by the selected optimisation services.
 
-Only the pricing data for the selected services is included in each generated bundle.
+Only the data needed for your chosen services is included in your deployment bundle.
+
+You do not need to change these files unless you have been asked to do so as part of support or troubleshooting.
