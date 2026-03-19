@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+<section class="shell">
+  <div class="section-head">
+    <div class="section-copy">
+      <div class="page-kicker">{{ role_label }}</div>
+      <h1 class="page-title">{{ page_title }}</h1>
+      <p class="page-subtitle">{{ page_subtitle }}</p>
+    </div>
+    <a href="{{ back_url }}" class="ghost-link">{{ back_label }}</a>
+  </div>
+
+  <div class="panel-grid" style="margin-bottom: 1rem;">
+    <div class="panel">
+      <h3>Application</h3>
+      <p>#{{ application.application_id }} · {{ application.status|capitalize }}</p>
+    </div>
+    <div class="panel">
+      <h3>Customer</h3>
+      <p>{{ application.contact_name }} · {{ application.organisation_name }}</p>
+      <p style="margin-top:0.35rem;">{{ application.contact_email }}</p>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 1.5rem;">
+    <div class="section-copy" style="margin-bottom: 1rem;">
+      <h2 style="margin:0 0 0.35rem; font-size:1.25rem;">Conversation</h2>
+      <p class="page-subtitle" style="margin:0;">Messages in this thread are visible to the customer and all admin accounts.</p>
+    </div>
+
+    {% if messages %}
+      <div class="message-thread">
+        {% for message in messages %}
+          <article class="message-card {% if message.sender_role == 'admin' %}message-card--admin{% else %}message-card--customer{% endif %}">
+            <div class="message-meta">
+              <strong>{{ message.sender_name }}</strong>
+              <span>{{ message.sender_role|capitalize }}</span>
+              <span>
+                {% if message.created_at %}
+                  {{ message.created_at.strftime("%Y-%m-%d %H:%M") if message.created_at.strftime is defined else message.created_at }}
+                {% else %}
+                  —
+                {% endif %}
+              </span>
+            </div>
+            <div class="message-body">{{ message.message_body }}</div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="notice notice--info">No messages yet. Start the conversation below.</div>
+    {% endif %}
+
+    <form method="post" action="{{ post_url }}" class="message-form">
+      <label class="label" for="message_body">New message</label>
+      <textarea
+        class="input textarea"
+        id="message_body"
+        name="message_body"
+        rows="5"
+        maxlength="3000"
+        placeholder="Write your message here"
+        required
+      ></textarea>
+      <div class="action-row" style="margin-top: 1rem;">
+        <button type="submit">Send message</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<style>
+  .message-form {
+    margin-top: 1rem;
+  }
+
+  .message-form .label {
+    display: block;
+    margin: 0 0 0.6rem;
+    color: rgba(255,255,255,0.84);
+    font-size: 0.98rem;
+  }
+
+  .message-form .textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 140px;
+    resize: vertical;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+    padding: 14px 16px;
+    font: inherit;
+    line-height: 1.55;
+    outline: none;
+  }
+
+  .message-form .textarea:focus {
+    border-color: rgba(255,255,255,0.24);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.06);
+  }
+
+  .message-form .action-row {
+    margin-top: 1rem;
+  }
+
+  .message-form .action-row button {
+    margin-top: 0;
+    min-width: 220px;
+  }
+
+  @media (max-width: 860px) {
+    .message-form .action-row button {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+</style>
+{% endblock %}

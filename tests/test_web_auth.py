@@ -2,6 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from datetime import timedelta
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WEB_DIR = PROJECT_ROOT / "flaskAPP" / "web"
@@ -12,6 +13,12 @@ import app as web_app
 
 
 class FakeCursor:
+    def execute(self, query, params=None):
+        self.last_query = " ".join(query.split())
+
+    def fetchone(self):
+        return {"Field": "is_superuser"}
+
     def close(self):
         pass
 
@@ -78,6 +85,7 @@ class TestWebAuth(unittest.TestCase):
             "display_name": "Admin",
             "password_hash": "irrelevant",
             "is_active": False,
+            "is_superuser": True,
         }
 
         with patch("app.get_db_connection", return_value=fake_conn), patch(
@@ -93,10 +101,10 @@ class TestWebAuth(unittest.TestCase):
         with patch("app.get_db_connection", return_value=fake_conn), patch(
             "app.find_account_by_email", return_value=None
         ):
-            response = self.client.post("/forgot-password", data={"email": "missing@example.com", "step": "lookup"})
+            response = self.client.post("/forgot-password", data={"email": "missing@example.com"})
 
         self.assertEqual(404, response.status_code)
-        self.assertIn(b"No account was found for that email address.", response.data)
+        self.assertIn(b"Cannot find an account with this email.", response.data)
 
     def test_forgot_password_short_password_rejected(self):
         fake_conn = FakeConnection()
@@ -107,13 +115,20 @@ class TestWebAuth(unittest.TestCase):
             "display_name": "Admin",
             "password_hash": "old",
             "is_active": True,
+            "is_superuser": True,
         }
         with patch("app.get_db_connection", return_value=fake_conn), patch(
             "app.find_account_by_email", return_value=account
         ):
+            with self.client.session_transaction() as sess:
+                sess["password_reset"] = {
+                    "email": "admin@example.com",
+                    "token": "token-123",
+                    "expires_at": (web_app.utc_now() + timedelta(minutes=15)).isoformat(),
+                }
             response = self.client.post(
-                "/forgot-password",
-                data={"email": "admin@example.com", "step": "reset", "password": "short", "confirm_password": "short"},
+                "/forgot-password/reset",
+                data={"email": "admin@example.com", "password": "short", "confirm_password": "short", "reset_token": "token-123"},
             )
         self.assertEqual(400, response.status_code)
         self.assertIn(b"Password must be at least 8 characters long.", response.data)
@@ -127,21 +142,75 @@ class TestWebAuth(unittest.TestCase):
             "display_name": "Admin",
             "password_hash": "old",
             "is_active": True,
+            "is_superuser": True,
+        }
+        with patch("app.get_db_connection", return_value=fake_conn), patch(
+            "app.find_account_by_email", return_value=account
+        ):
+            with self.client.session_transaction() as sess:
+                sess["password_reset"] = {
+                    "email": "admin@example.com",
+                    "token": "token-123",
+                    "expires_at": (web_app.utc_now() + timedelta(minutes=15)).isoformat(),
+                }
+            response = self.client.post(
+                "/forgot-password/reset",
+                data={
+                    "email": "admin@example.com",
+                    "password": "newpassword123",
+                    "confirm_password": "different123",
+                    "reset_token": "token-123",
+                },
+            )
+        self.assertEqual(400, response.status_code)
+        self.assertIn(b"Passwords do not match.", response.data)
+
+    def test_forgot_password_lookup_creates_reset_session(self):
+        fake_conn = FakeConnection()
+        account = {
+            "user_role": "admin",
+            "account_id": 1,
+            "email": "admin@example.com",
+            "display_name": "Admin",
+            "password_hash": "old",
+            "is_active": True,
+            "is_superuser": True,
+        }
+        with patch("app.get_db_connection", return_value=fake_conn), patch(
+            "app.find_account_by_email", return_value=account
+        ), patch("app.send_verification_code"):
+            response = self.client.post("/forgot-password", data={"email": "admin@example.com"})
+
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/forgot-password/verify", response.location)
+        with self.client.session_transaction() as sess:
+            self.assertEqual("admin@example.com", sess["password_reset_verification"]["email"])
+            self.assertTrue(sess["password_reset_verification"]["code"])
+
+    def test_forgot_password_verify_rejected_without_valid_session(self):
+        fake_conn = FakeConnection()
+        account = {
+            "user_role": "admin",
+            "account_id": 1,
+            "email": "admin@example.com",
+            "display_name": "Admin",
+            "password_hash": "old",
+            "is_active": True,
+            "is_superuser": True,
         }
         with patch("app.get_db_connection", return_value=fake_conn), patch(
             "app.find_account_by_email", return_value=account
         ):
             response = self.client.post(
-                "/forgot-password",
+                "/forgot-password/verify",
                 data={
-                    "email": "admin@example.com",
-                    "step": "reset",
-                    "password": "newpassword123",
-                    "confirm_password": "different123",
+                    "action": "verify",
+                    "verification_code": "wrong-token",
                 },
             )
-        self.assertEqual(400, response.status_code)
-        self.assertIn(b"Passwords do not match.", response.data)
+
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/forgot-password", response.location)
 
     def test_forgot_password_reset_success(self):
         fake_conn = FakeConnection()
@@ -152,18 +221,25 @@ class TestWebAuth(unittest.TestCase):
             "display_name": "Admin",
             "password_hash": "old",
             "is_active": True,
+            "is_superuser": True,
         }
 
         with patch("app.get_db_connection", return_value=fake_conn), patch(
             "app.find_account_by_email", return_value=account
         ), patch("app.update_account_password") as update_password:
+            with self.client.session_transaction() as sess:
+                sess["password_reset"] = {
+                    "email": "admin@example.com",
+                    "token": "token-123",
+                    "expires_at": (web_app.utc_now() + timedelta(minutes=15)).isoformat(),
+                }
             response = self.client.post(
-                "/forgot-password",
+                "/forgot-password/reset",
                 data={
                     "email": "admin@example.com",
-                    "step": "reset",
                     "password": "newpassword123",
                     "confirm_password": "newpassword123",
+                    "reset_token": "token-123",
                 },
             )
 
@@ -172,6 +248,30 @@ class TestWebAuth(unittest.TestCase):
         update_password.assert_called_once()
         self.assertTrue(fake_conn.committed)
 
+    def test_forgot_password_verify_code_redirects_to_reset(self):
+        fake_conn = FakeConnection()
+        account = {
+            "user_role": "admin",
+            "account_id": 1,
+            "email": "admin@example.com",
+            "display_name": "Admin",
+            "password_hash": "old",
+            "is_active": True,
+        }
+        with patch("app.get_db_connection", return_value=fake_conn), patch(
+            "app.find_account_by_email", return_value=account
+        ), patch("app.send_verification_code"):
+            self.client.post("/forgot-password", data={"email": "admin@example.com"})
+
+        with self.client.session_transaction() as sess:
+            code = sess["password_reset_verification"]["code"]
+
+        response = self.client.post(
+            "/forgot-password/verify",
+            data={"action": "verify", "verification_code": code},
+        )
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/forgot-password/reset", response.location)
 
 if __name__ == "__main__":
     unittest.main()

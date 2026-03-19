@@ -4,7 +4,7 @@ Deployment Steps
 Prerequisites
 -------------
 
-- AWS credentials configured locally
+- AWS credentials locally
 - Terraform installed
 
 Deploy

@@ -10,17 +10,19 @@ INSERT INTO services (service_code, service_name) VALUES
 ON DUPLICATE KEY UPDATE
   service_name = VALUES(service_name);
 
-INSERT INTO admins (full_name, email, password_hash, is_active)
+INSERT INTO admins (full_name, email, password_hash, is_active, is_superuser)
 VALUES (
   'Admin',
   'admin@finops.local',
   'scrypt:32768:8:1$EUlhss69dncnSNqG$860b6c3dc18fd8555bba76d53270331e1d3ca663ff556671c74b17e22aafb846986acf29bc1fea08662c52e7bd184f8895cbe6fe3ea1f749c97d60f31b1f0712',
+  1,
   1
 )
 ON DUPLICATE KEY UPDATE
   full_name = VALUES(full_name),
   password_hash = VALUES(password_hash),
-  is_active = VALUES(is_active);
+  is_active = VALUES(is_active),
+  is_superuser = VALUES(is_superuser);
 
 INSERT INTO organisations (organisation_name) VALUES
   ('Northshore Retail Group'),

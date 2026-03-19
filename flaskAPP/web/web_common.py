@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
 from functools import wraps
+from email.message import EmailMessage
 import json
 import re
+import secrets
+import smtplib
 
 from flask import redirect, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -25,6 +28,96 @@ def verify_password(stored_hash: str, password: str) -> bool:
 
 def hash_password(password: str) -> str:
     return generate_password_hash(password)
+
+
+def generate_verification_code() -> str:
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+def send_verification_code(app, config, recipient: str, purpose: str, code: str) -> bool:
+    subject = f"{purpose} verification code"
+    body = (
+        f"Your verification code for {purpose.lower()} is {code}.\n\n"
+        "If you did not request this code, you can ignore this message."
+    )
+
+    if not config.smtp_host or not config.smtp_sender:
+        app.logger.info("Verification code for %s sent to %s: %s", purpose.lower(), recipient, code)
+        return False
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = config.smtp_sender
+    message["To"] = recipient
+    message.set_content(body)
+
+    with smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=10) as smtp:
+        if config.smtp_use_tls:
+            smtp.starttls()
+        if config.smtp_username:
+            smtp.login(config.smtp_username, config.smtp_password)
+        smtp.send_message(message)
+    return True
+
+
+def ensure_application_messages_table(conn):
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS application_messages (
+              message_id INT AUTO_INCREMENT PRIMARY KEY,
+              application_id INT NOT NULL,
+              customer_user_id INT NULL,
+              admin_id INT NULL,
+              sender_role ENUM('customer','admin') NOT NULL,
+              sender_name VARCHAR(255) NOT NULL,
+              message_body TEXT NOT NULL,
+              created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              CONSTRAINT fk_application_messages_application
+                FOREIGN KEY (application_id) REFERENCES applications(application_id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+              CONSTRAINT fk_application_messages_customer
+                FOREIGN KEY (customer_user_id) REFERENCES customer_users(customer_user_id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE,
+              CONSTRAINT fk_application_messages_admin
+                FOREIGN KEY (admin_id) REFERENCES admins(admin_id)
+                ON DELETE SET NULL
+                ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            """
+        )
+        conn.commit()
+    finally:
+        cursor.close()
+
+
+def ensure_admin_superuser_support(conn):
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SHOW COLUMNS FROM admins LIKE 'is_superuser'")
+        column = cursor.fetchone()
+        if not column:
+            cursor.close()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                ALTER TABLE admins
+                ADD COLUMN is_superuser TINYINT(1) NOT NULL DEFAULT 0
+                """
+            )
+            cursor.execute(
+                """
+                UPDATE admins
+                SET is_superuser = 1
+                WHERE email = 'admin@finops.local'
+                """
+            )
+            conn.commit()
+    finally:
+        cursor.close()
 
 
 def slugify(value: str) -> str:
@@ -76,6 +169,7 @@ def find_account_by_email(cursor, email: str):
     cursor.execute(
         """
         SELECT admin_id, full_name, email, password_hash, is_active
+             , is_superuser
         FROM admins
         WHERE email = %s
         """,
@@ -90,6 +184,7 @@ def find_account_by_email(cursor, email: str):
             "display_name": admin["full_name"],
             "password_hash": admin.get("password_hash"),
             "is_active": bool(admin.get("is_active")),
+            "is_superuser": bool(admin.get("is_superuser")),
         }
 
     cursor.execute(

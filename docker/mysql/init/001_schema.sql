@@ -77,11 +77,35 @@ CREATE TABLE IF NOT EXISTS onboarding_report_recipients (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS application_messages (
+  message_id INT AUTO_INCREMENT PRIMARY KEY,
+  application_id INT NOT NULL,
+  customer_user_id INT NULL,
+  admin_id INT NULL,
+  sender_role ENUM('customer','admin') NOT NULL,
+  sender_name VARCHAR(255) NOT NULL,
+  message_body TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_application_messages_application
+    FOREIGN KEY (application_id) REFERENCES applications(application_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_application_messages_customer
+    FOREIGN KEY (customer_user_id) REFERENCES customer_users(customer_user_id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_application_messages_admin
+    FOREIGN KEY (admin_id) REFERENCES admins(admin_id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE IF NOT EXISTS admins (
   admin_id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(512) NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
+  is_superuser TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

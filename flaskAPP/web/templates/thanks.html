@@ -2,99 +2,21 @@
 {% set page_type = "internal" %}
 
 {% block content %}
-
-<section style="padding: 4rem 6rem; max-width: 1200px; margin: 0 auto;">
-  <div class="card" style="max-width: 760px; margin: 0 auto; padding: 2rem; border-radius: 20px;">
-
-    <div style="margin-bottom: 1.5rem;">
-      <h1 style="font-size: 2.2rem; margin: 0 0 0.75rem 0;">
-        Application received ✅
-      </h1>
-      <p style="margin: 0; opacity: 0.78; line-height: 1.6;">
-        Thanks, {{ app_row.contact_name }}. Your application has been recorded successfully.
-      </p>
-    </div>
-
-    <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);">
-        <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.35rem;">Application ID</div>
-        <div>
-          <span class="badge">{{ app_row.application_id }}</span>
-        </div>
-      </div>
-
-      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);">
-        <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.35rem;">Status</div>
-        <div>
-          <span class="badge badge-{{ app_row.status }}">{{ app_row.status|capitalize }}</span>
-        </div>
-      </div>
-
-      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);">
-        <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.35rem;">Company</div>
-        <div>{{ app_row.organisation_name }}</div>
-      </div>
-
-      <div style="padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);">
-        <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.35rem;">Contact Email</div>
-        <div>{{ app_row.contact_email }}</div>
-      </div>
-
-      <div style="grid-column: 1 / -1; padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03);">
-        <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 0.35rem;">Notes</div>
-        <div>{{ app_row.notes or 'No notes provided.' }}</div>
-      </div>
-    </div>
-
-    <div style="padding: 1rem 1.1rem; border-radius: 16px; border: 1px solid rgba(59,130,246,0.18); background: rgba(59,130,246,0.08); margin-bottom: 1.5rem;">
-      <div style="font-weight: 600; margin-bottom: 0.35rem;">What happens next</div>
-      <div style="opacity: 0.84; line-height: 1.6;">
-        Your application will be reviewed by an administrator. Once approved, you can continue with onboarding and follow the setup instructions to deploy the FinOps automation inside your AWS account.
-      </div>
-    </div>
-
-    <div style="display:flex; gap: 0.75rem; flex-wrap: wrap;">
-      <a href="{{ url_for('onboarding') }}" style="text-decoration:none;">
-        <button type="button">View onboarding instructions</button>
+<section class="shell">
+  <div class="card" style="max-width: 760px; margin: 0 auto; padding: 2rem;">
+    <div class="page-kicker">Application Submitted</div>
+    <h1 class="page-title" style="font-size: 2.4rem; margin-bottom: 0.8rem;">Your dashboard is ready</h1>
+    <p class="page-subtitle" style="margin-bottom: 1.5rem;">
+      Your application has been created successfully. Continue in the dashboard to track its status, update the pending details, or withdraw it before review is complete.
+    </p>
+    <div class="action-row">
+      <a href="{{ url_for('customer_dashboard', banner='submitted') }}" class="button-link button-secondary">
+        Go to dashboard
       </a>
-
-      <a href="{{ url_for('login_page') }}" style="text-decoration:none;">
-        <button type="button" style="background: transparent; border: 1px solid rgba(255,255,255,0.16);">
-          Go to login
-        </button>
+      <a href="{{ url_for('onboarding') }}" class="ghost-link">
+        View onboarding instructions
       </a>
     </div>
-
   </div>
 </section>
-
-<style>
-  .badge {
-    display: inline-block;
-    padding: 0.45rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.92rem;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.06);
-  }
-
-  .badge-approved {
-    background: rgba(34,197,94,0.14);
-  }
-
-  .badge-rejected {
-    background: rgba(239,68,68,0.14);
-  }
-
-  .badge-pending {
-    background: rgba(245,158,11,0.14);
-  }
-
-  @media (max-width: 860px) {
-    section {
-      padding: 2rem 1rem !important;
-    }
-  }
-</style>
-
 {% endblock %}

@@ -16,49 +16,46 @@
 
     <header class="nav">
       <div class="nav-left">
-        <a href="{{ url_for('index') }}"
-           style="display:inline-flex; align-items:center; gap:0.2rem; text-decoration:none;">
-          <span class="logo">Fin</span><span class="logo-accent" style="color:#38bdf8;">Ops</span><span class="logo-accent">Automation</span>
+        <a href="{{ url_for('index') }}" class="brand-link">
+          <span class="logo">Fin</span><span class="logo-accent brand-mark">Ops</span><span class="logo-accent">Automation</span>
         </a>
       </div>
 
       <nav class="nav-right">
         {% if session.get("user_role") == "admin" %}
-          <a href="{{ url_for('index') }}">Home</a>
-          <a href="{{ url_for('info') }}">Information</a>
-          <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
-          <a href="{{ url_for('logout') }}"
-             style="padding: 0.45rem 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);">
+          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
+          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
+          <a href="{{ url_for('admin_dashboard') }}" class="nav-pill">Admin Dashboard</a>
+          <a href="{{ url_for('logout') }}" class="nav-cta">
             Logout
           </a>
 
         {% elif session.get("user_role") == "customer" %}
-          <a href="{{ url_for('index') }}">Home</a>
-          <a href="{{ url_for('info') }}">Information</a>
-          <a href="{{ url_for('onboarding') }}">Onboarding</a>
-          <a href="{{ url_for('customer_dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('logout') }}"
-             style="padding: 0.45rem 0.8rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);">
+          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
+          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
+          <a href="{{ url_for('onboarding') }}" class="nav-pill">Onboarding</a>
+          <a href="{{ url_for('customer_dashboard') }}" class="nav-pill">Dashboard</a>
+          <a href="{{ url_for('logout') }}" class="nav-cta">
             Logout
           </a>
 
         {% else %}
-          <a href="{{ url_for('index') }}">Home</a>
-          <a href="{{ url_for('info') }}">Information</a>
-          <a href="{{ url_for('apply_form') }}">Apply</a>
-          <a href="{{ url_for('onboarding') }}">Onboarding</a>
-          <a href="{{ url_for('login_page') }}">Login</a>
+          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
+          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
+          <a href="{{ url_for('apply_form') }}" class="nav-pill">Apply</a>
+          <a href="{{ url_for('onboarding') }}" class="nav-pill">Onboarding</a>
+          <a href="{{ url_for('login_page') }}" class="nav-cta">Login</a>
         {% endif %}
       </nav>
     </header>
 
     {% if session.get("user_role") == "admin" %}
-      <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); color:#94a3b8; font-size: 0.9rem;">
-        Logged in as admin <b style="color:#e8eef6;">{{ session.get("admin_email") }}</b>
+      <div class="session-bar">
+        Logged in as admin <strong>{{ session.get("admin_email") }}</strong>
       </div>
     {% elif session.get("user_role") == "customer" %}
-      <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08); color:#94a3b8; font-size: 0.9rem;">
-        Logged in as <b style="color:#e8eef6;">{{ session.get("customer_email") }}</b>
+      <div class="session-bar">
+        Logged in as <strong>{{ session.get("customer_email") }}</strong>
       </div>
     {% endif %}
 

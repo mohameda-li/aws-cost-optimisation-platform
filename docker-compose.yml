@@ -24,7 +24,15 @@ services:
       dockerfile: flaskAPP/web/Dockerfile
     restart: unless-stopped
     environment:
+      APP_ENV: ${APP_ENV:-development}
       FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-dev-secret-change-later}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5050}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SENDER: ${SMTP_SENDER:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
       DB_USER: ${DB_USER:-finops_app}

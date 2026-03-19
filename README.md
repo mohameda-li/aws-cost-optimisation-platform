@@ -31,6 +31,8 @@ The web app will be available on `http://localhost:5050`.
 
 Copy [.env.example](/Users/mohamedali/Library/CloudStorage/OneDrive-UWEBristol/Year%203/DSP/FinalApp/.env.example) to `.env` if you want to override the default local Docker settings.
 
+For email verification and password reset codes, configure the SMTP values in `.env`. Without SMTP, the app falls back to local development behavior and logs or shows the code for testing.
+
 ## Tests
 
 Run the automated test suite with:
@@ -57,6 +59,18 @@ The current automated coverage includes:
 - admin approval and management route tests
 - customer bundle download route tests
 - shared helper tests for bundle and customer configuration logic
+
+## Main Product Flows
+
+The current platform supports:
+
+- customer application submission with email verification
+- customer login and password reset with verification codes
+- customer self-service dashboard for reviewing, editing, withdrawing, and downloading approved applications
+- customer to admin conversation threads linked to each application
+- admin review dashboard with queue views and filtered application management
+- admin application detail pages with decision controls, conversation history, and deployment bundle download
+- superuser-only admin account management
 
 ## CI
 
@@ -98,6 +112,8 @@ When a bundle is generated, the app:
 6. copies only the selected pricing data directories
 
 Customers do not need to zip Lambda files manually.
+
+Admins can also download the generated deployment bundle from the admin application detail page once an application has been approved.
 
 ## Generated Customer Bundle
 

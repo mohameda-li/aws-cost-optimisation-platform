@@ -14,9 +14,13 @@ from web_common import (
     admin_login_required,
     build_customer_bundle_data,
     customer_login_required,
+    ensure_admin_superuser_support,
+    ensure_application_messages_table,
     find_account_by_email,
+    generate_verification_code,
     get_enabled_service_codes,
     hash_password,
+    send_verification_code,
     slugify,
     update_account_password,
     utc_now,
@@ -27,7 +31,7 @@ from web_common import (
 app = Flask(__name__)
 app_config = AppConfig.from_env()
 app.secret_key = app_config.secret_key
-configure_logging(app)
+configure_logging(app, app_config)
 create_customer_bundle = lambda customer_data: _create_customer_bundle(app.root_path, customer_data)
 
 register_public_routes(app, sys.modules[__name__])

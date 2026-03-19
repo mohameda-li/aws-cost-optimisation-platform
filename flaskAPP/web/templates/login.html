@@ -3,14 +3,14 @@
 
 {% block content %}
 
-<section style="padding: 4rem 6rem; max-width: 1200px;">
+<section class="auth-shell">
 
-  <div class="card" style="max-width: 520px; margin: 0 auto; padding: 2rem;">
-    <h1 style="font-size: 2.4rem; margin: 0 0 1.5rem;">
+  <div class="card auth-card">
+    <h1 class="auth-title">
       Login
     </h1>
 
-    <p style="opacity:0.75; margin: 0 0 1.5rem;">
+    <p class="auth-subtitle">
       Sign in using your email and password.
     </p>
 
@@ -21,13 +21,13 @@
     {% endif %}
 
     {% if success %}
-      <div style="margin-bottom: 1rem; padding: 0.9rem 1rem; border-radius: 12px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.28); color: #dcfce7;">
+      <div class="notice notice--success">
         {{ success }}
       </div>
     {% endif %}
 
-    <form method="post" action="{{ url_for('login_submit') }}" style="display:flex; flex-direction:column; gap: 0.9rem;">
-      <label style="opacity:0.85;">Email</label>
+    <form method="post" action="{{ url_for('login_submit') }}" class="auth-form">
+      <label class="auth-label">Email</label>
       <input
         type="email"
         name="email"
@@ -37,7 +37,7 @@
         style="width:100%;"
       />
 
-      <label style="opacity:0.85;">Password</label>
+      <label class="auth-label">Password</label>
       <input
         type="password"
         name="password"
@@ -46,7 +46,7 @@
         style="width:100%;"
       />
 
-      <div class="auth-actions">
+      <div class="auth-stack">
         <button type="submit" class="auth-action">
           Login
         </button>

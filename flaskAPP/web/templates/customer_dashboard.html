@@ -3,18 +3,41 @@
 
 {% block content %}
 
-<section style="padding: 4rem 6rem; max-width: 1200px;">
+<section class="shell">
 
-  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
-    <div>
-      <h1 style="font-size: 2.4rem; margin: 0;">
-        Customer Dashboard
-      </h1>
-      <p style="margin: 0.5rem 0 0; opacity: 0.75;">
-        View your application status and onboarding configuration.
-      </p>
+  <div class="section-head">
+    <div class="section-copy">
+      <div class="page-kicker">Customer Portal</div>
+      <h1 class="page-title">Customer Dashboard</h1>
+      <p class="page-subtitle">Track your application status, update pending onboarding details and download your deployment bundle when approved.</p>
     </div>
   </div>
+
+  {% if banner == "submitted" %}
+    <div class="notice notice--success">
+      Your application has been submitted. You can review or update it here while it is still pending.
+    </div>
+  {% elif banner == "updated" %}
+    <div class="notice notice--success">
+      Your application changes have been saved.
+    </div>
+  {% elif banner == "resubmitted" %}
+    <div class="notice notice--warning">
+      Your approved application was updated and has been returned to pending for review.
+    </div>
+  {% elif banner == "withdrawn" %}
+    <div class="notice notice--warning">
+      Your pending application has been withdrawn.
+    </div>
+  {% elif banner == "editing-unavailable" %}
+    <div class="notice notice--warning">
+      Only pending applications can be edited.
+    </div>
+  {% elif banner == "withdraw-unavailable" %}
+    <div class="notice notice--warning">
+      Only pending applications can be withdrawn.
+    </div>
+  {% endif %}
 
   {% if applications %}
     <div style="display:grid; gap: 1rem;">
@@ -43,23 +66,38 @@
             </div>
           </div>
 
-          <div class="dashboard-grid" style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;">
-            <div>
-              <div style="opacity:0.7; margin-bottom:0.35rem;">AWS Region</div>
+          <div class="dashboard-grid data-grid">
+            <div class="data-block">
+              <div class="data-label">Company</div>
+              <div>{{ app.organisation_name or 'Not set' }}</div>
+            </div>
+
+            <div class="data-block">
+              <div class="data-label">Contact Name</div>
+              <div>{{ app.contact_name or 'Not set' }}</div>
+            </div>
+
+            <div class="data-block">
+              <div class="data-label">Contact Email</div>
+              <div>{{ app.contact_email or 'Not set' }}</div>
+            </div>
+
+            <div class="data-block">
+              <div class="data-label">AWS Region</div>
               <div>{{ app.aws_region or 'Not set' }}</div>
             </div>
 
-            <div>
-              <div style="opacity:0.7; margin-bottom:0.35rem;">Report Frequency</div>
+            <div class="data-block">
+              <div class="data-label">Report Frequency</div>
               <div>{{ app.report_frequency or 'Not set' }}</div>
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div style="opacity:0.7; margin-bottom:0.35rem;">Enabled Services</div>
+            <div class="data-block" style="grid-column:1 / -1;">
+              <div class="data-label">Enabled Services</div>
               {% if app.services %}
-                <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                <div class="chip-list">
                   {% for service in app.services %}
-                    <span style="padding:0.35rem 0.7rem; border-radius:999px; border:1px solid rgba(255,255,255,0.12);">
+                    <span class="chip">
                       {{ service.service_name }}
                     </span>
                   {% endfor %}
@@ -69,8 +107,8 @@
               {% endif %}
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div style="opacity:0.7; margin-bottom:0.35rem;">Report Recipients</div>
+            <div class="data-block" style="grid-column:1 / -1;">
+              <div class="data-label">Report Recipients</div>
               {% if app.report_recipients %}
                 <ul style="margin:0; padding-left:1.2rem;">
                   {% for recipient in app.report_recipients %}
@@ -82,50 +120,96 @@
               {% endif %}
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div style="opacity:0.7; margin-bottom:0.35rem;">Notes</div>
+            <div class="data-block" style="grid-column:1 / -1;">
+              <div class="data-label">Notes</div>
               <div>{{ app.notes or 'No notes provided.' }}</div>
             </div>
           </div>
 
           {% if app.status == "approved" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:flex-end;">
-              <a
-                href="{{ url_for('download_bundle', application_id=app.application_id) }}"
-                style="
-                  display:inline-flex;
-                  align-items:center;
-                  justify-content:center;
-                  padding:0.75rem 1.1rem;
-                  border-radius:12px;
-                  text-decoration:none;
-                  font-weight:600;
-                  border:1px solid rgba(255,255,255,0.14);
-                  background:rgba(255,255,255,0.06);
-                  color:inherit;
-                  transition:0.2s ease;
-                "
-              >
-                Download Deployment Bundle
-              </a>
+            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
+              <span class="status-message">
+                Approved. If you change this application, it will return to pending for review.
+              </span>
+              <div class="action-row">
+                <a
+                  href="{{ url_for('download_bundle', application_id=app.application_id) }}"
+                  class="ghost-link"
+                >
+                  Download Deployment Bundle
+                </a>
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
+                  {% if app.message_count %}
+                    Open conversation ({{ app.message_count }})
+                  {% else %}
+                    Contact an admin
+                  {% endif %}
+                </a>
+                {% if app.has_new_admin_message %}
+                  <span class="message-alert">New admin reply</span>
+                {% endif %}
+                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary">
+                  Edit application
+                </a>
+              </div>
             </div>
           {% elif app.status == "pending" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:flex-end;">
+            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
               <span class="status-message">
-                Awaiting approval
+                Awaiting approval. You can still update or withdraw this application.
               </span>
+              <div class="action-row">
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
+                  {% if app.message_count %}
+                    Open conversation ({{ app.message_count }})
+                  {% else %}
+                    Contact an admin
+                  {% endif %}
+                </a>
+                {% if app.has_new_admin_message %}
+                  <span class="message-alert">New admin reply</span>
+                {% endif %}
+                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary">
+                  Edit application
+                </a>
+                <form method="post" action="{{ url_for('withdraw_application', application_id=app.application_id) }}" class="inline-form">
+                  <button type="submit" class="button-link button-danger">
+                    Withdraw application
+                  </button>
+                </form>
+              </div>
             </div>
           {% elif app.status == "rejected" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:flex-end;">
+            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
               <span class="status-message">
                 Application not approved
               </span>
+              <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
+                {% if app.message_count %}
+                  Open conversation ({{ app.message_count }})
+                {% else %}
+                  Contact an admin
+                {% endif %}
+              </a>
+              {% if app.has_new_admin_message %}
+                <span class="message-alert">New admin reply</span>
+              {% endif %}
             </div>
           {% else %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:flex-end;">
+            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
               <span class="status-message">
                 Bundle unavailable for current status
               </span>
+              <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
+                {% if app.message_count %}
+                  Open conversation ({{ app.message_count }})
+                {% else %}
+                  Contact an admin
+                {% endif %}
+              </a>
+              {% if app.has_new_admin_message %}
+                <span class="message-alert">New admin reply</span>
+              {% endif %}
             </div>
           {% endif %}
 
@@ -134,53 +218,13 @@
     </div>
   {% else %}
     <div class="card" style="padding: 1.5rem; border-radius: 18px;">
-      <p style="margin:0; opacity:0.8;">No applications found for this account.</p>
+      <p class="subtle-empty">No applications found for this account.</p>
+      <div style="margin-top: 1rem;">
+        <a href="{{ url_for('onboarding') }}" class="ghost-link">View onboarding instructions</a>
+      </div>
     </div>
   {% endif %}
 
 </section>
-
-<style>
-  .status-badge {
-    display: inline-block;
-    padding: 0.45rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.92rem;
-    border: 1px solid rgba(255,255,255,0.12);
-  }
-
-  .status-approved {
-    background: rgba(34,197,94,0.14);
-  }
-
-  .status-rejected {
-    background: rgba(239,68,68,0.14);
-  }
-
-  .status-pending {
-    background: rgba(245,158,11,0.14);
-  }
-
-  .status-message {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.7rem 1rem;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.04);
-    opacity: 0.8;
-    font-size: 0.95rem;
-  }
-
-  @media (max-width: 860px) {
-    section {
-      padding: 2rem 1rem !important;
-    }
-
-    .dashboard-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-</style>
 
 {% endblock %}

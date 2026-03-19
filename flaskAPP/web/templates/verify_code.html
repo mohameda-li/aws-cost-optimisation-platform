@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+
+<section class="auth-shell">
+  <div class="card auth-card">
+    <h1 class="auth-title">
+      {{ heading }}
+    </h1>
+
+    <p class="auth-subtitle">
+      {{ subtitle }}
+    </p>
+
+    <div class="notice notice--info">
+      Code sent to {{ email }}.
+    </div>
+
+    {% if debug_code %}
+      <div class="notice notice--warning">
+        Local test code: <strong>{{ debug_code }}</strong>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="error" style="margin-bottom: 1rem;">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ action_url }}" class="auth-form">
+      <label class="auth-label">Verification code</label>
+      <input
+        type="text"
+        name="verification_code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        maxlength="6"
+        placeholder="Enter 6-digit code"
+        style="width:100%;"
+      />
+
+      <div class="auth-stack">
+        <button type="submit" class="auth-action">
+          Verify code
+        </button>
+
+        <a href="{{ back_url }}" class="auth-action">
+          Go back
+        </a>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% endblock %}
