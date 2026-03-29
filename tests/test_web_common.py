@@ -26,7 +26,7 @@ class TestWebCommon(unittest.TestCase):
         customer_data = {"services": {"s3": True, "rds": False, "eks": True, "spot": True}}
         self.assertEqual(["s3", "eks", "spot"], get_enabled_service_codes(customer_data))
 
-    def test_build_customer_bundle_data_uses_report_email_and_defaults(self):
+    def test_build_customer_bundle_data_uses_all_report_emails_and_defaults(self):
         data = {
             "organisation_id": 7,
             "organisation_name": "Northshore Retail Group",
@@ -38,14 +38,19 @@ class TestWebCommon(unittest.TestCase):
         payload = build_customer_bundle_data(
             data,
             ["s3", "rds"],
-            {"report_email": "reports@example.com"},
+            [
+                {"report_email": "reports@example.com"},
+                {"report_email": "finops@example.com"},
+                {"report_email": "reports@example.com"},
+            ],
         )
 
         self.assertEqual("org_7", payload["customer_id"])
         self.assertEqual("eu-west-2", payload["aws_region"])
-        self.assertEqual("northshore-retail-group-finops-reports", payload["report_bucket_name"])
-        self.assertEqual("reports@example.com", payload["notification_email"])
+        self.assertEqual("northshore-retail-group-7-finops-reports", payload["report_bucket_name"])
+        self.assertEqual("reports@example.com,finops@example.com", payload["notification_email"])
         self.assertEqual("rate(30 days)", payload["schedule_expression"])
+        self.assertTrue(payload["run_initial_report_on_apply"])
         self.assertTrue(payload["services"]["s3"])
         self.assertTrue(payload["services"]["rds"])
         self.assertFalse(payload["services"]["spot"])

@@ -7,6 +7,185 @@ from typing import Any, Dict, Tuple
 
 
 PDF_MAX_ROWS_PER_SERVICE = 50
+REPORT_STYLES = """
+  :root {
+    --bg: #0b0f17;
+    --panel: rgba(255,255,255,0.06);
+    --panel2: rgba(255,255,255,0.04);
+    --text: rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.65);
+    --border: rgba(255,255,255,0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+    background: radial-gradient(1200px 800px at 20% 0%, rgba(80,120,255,0.22), transparent 55%),
+                radial-gradient(900px 600px at 80% 20%, rgba(0,200,170,0.18), transparent 55%),
+                var(--bg);
+    color: var(--text);
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 18px 60px; }
+
+  .top {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 16px;
+  }
+
+  .title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .kpi {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+
+  .kpi .label { color: var(--muted); font-size: 12px; }
+  .kpi .val { font-size: 22px; margin-top: 6px; }
+  .kpi-note { font-size: 14px; }
+
+  .cards {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .card-title { color: var(--muted); font-size: 12px; }
+  .big { font-size: 20px; margin: 8px 0 6px; }
+  .meta { color: var(--muted); font-size: 12px; }
+
+  .section {
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 14px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .section--compact { margin-top: 10px; }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  h2 { margin: 0; font-size: 16px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  th, td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 10px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  th {
+    color: rgba(255,255,255,0.70);
+    font-weight: 650;
+    background: rgba(255,255,255,0.04);
+    white-space: nowrap;
+  }
+
+  .muted { color: var(--muted); }
+
+  .empty-state {
+    display: grid;
+    gap: 6px;
+    padding: 2px 0 0;
+  }
+
+  .empty-title {
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  .empty-reason {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .empty-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .detail-label {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .risk {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+    white-space: nowrap;
+  }
+
+  .risk-low { background: rgba(0,200,170,0.15); }
+  .risk-medium { background: rgba(255,180,0,0.16); }
+  .risk-high { background: rgba(255,70,70,0.18); }
+  .risk-unknown { background: rgba(160,160,160,0.10); }
+
+  @media (max-width: 920px) {
+    .kpis,
+    .cards {
+      grid-template-columns: 1fr;
+    }
+  }
+"""
 
 
 def esc(s) -> str:
@@ -119,6 +298,35 @@ def table(headers, rows):
     """
 
 
+def build_empty_state(details: Dict[str, Any]) -> str:
+    details = details if isinstance(details, dict) else {}
+    reason = get(details, "reason", "")
+    detail_items = []
+    for key, value in details.items():
+        if key == "reason" or value in (None, "", [], {}):
+            continue
+        label = esc(str(key).replace("_", " ").capitalize())
+        rendered = esc(", ".join(str(item) for item in value)) if isinstance(value, list) else esc(value)
+        detail_items.append(f"<span><span class='detail-label'>{label}:</span> {rendered}</span>")
+
+    detail_html = f"<div class='empty-meta'>{''.join(detail_items)}</div>" if detail_items else ""
+    reason_html = (
+        "<div class='empty-reason'><span class='detail-label'>Reason:</span> "
+        + esc(reason)
+        + "</div>"
+        if reason
+        else ""
+    )
+
+    return f"""
+    <div class="empty-state">
+      <div class="empty-title">No recommendations</div>
+      {reason_html}
+      {detail_html}
+    </div>
+    """
+
+
 def build_service_card(name, service_payload):
     recs = get(service_payload, "recommendations", []) or []
     return f"""
@@ -155,6 +363,9 @@ def build_top_actions(payload: Dict[str, Any], limit: int = 5) -> str:
 
 def render_generic(service_payload):
     recs = get(service_payload, "recommendations", []) or []
+    if not recs:
+        return build_empty_state(get(service_payload, "details", {}) or {})
+
     rows = []
 
     for rec in recs[:PDF_MAX_ROWS_PER_SERVICE]:
@@ -183,6 +394,7 @@ def build_html(payload: Dict[str, Any]) -> str:
 
     cards_html = "".join(build_service_card(name, svc) for name, svc in services.items())
     top_actions_html = build_top_actions(payload, limit=5)
+    savings_percent = pct_display((payload.get("summary") or {}).get("savings_percent", 0))
 
     sections = []
     for service_name, service_payload in services.items():
@@ -204,141 +416,7 @@ def build_html(payload: Dict[str, Any]) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>FinOps Automation Report - {esc(customer)}</title>
 <style>
-  :root {{
-    --bg: #0b0f17;
-    --panel: rgba(255,255,255,0.06);
-    --panel2: rgba(255,255,255,0.04);
-    --text: rgba(255,255,255,0.92);
-    --muted: rgba(255,255,255,0.65);
-    --border: rgba(255,255,255,0.10);
-  }}
-
-  * {{ box-sizing: border-box; }}
-
-  body {{
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
-    background: radial-gradient(1200px 800px at 20% 0%, rgba(80,120,255,0.22), transparent 55%),
-                radial-gradient(900px 600px at 80% 20%, rgba(0,200,170,0.18), transparent 55%),
-                var(--bg);
-    color: var(--text);
-  }}
-
-  .wrap {{ max-width: 1180px; margin: 0 auto; padding: 28px 18px 60px; }}
-
-  .top {{
-    display: grid;
-    gap: 12px;
-    padding: 18px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    border-radius: 16px;
-  }}
-
-  .title {{
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-  }}
-
-  h1 {{ font-size: 22px; margin: 0; }}
-  .sub {{ color: var(--muted); font-size: 13px; }}
-
-  .kpis {{
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }}
-
-  .kpi {{
-    background: var(--panel2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px 14px;
-  }}
-
-  .kpi .label {{ color: var(--muted); font-size: 12px; }}
-  .kpi .val {{ font-size: 22px; margin-top: 6px; }}
-
-  .cards {{
-    margin-top: 14px;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 12px;
-  }}
-
-  .card {{
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 14px;
-  }}
-
-  .card-title {{ color: var(--muted); font-size: 12px; }}
-  .big {{ font-size: 20px; margin: 8px 0 6px; }}
-  .meta {{ color: var(--muted); font-size: 12px; }}
-
-  .section {{
-    margin-top: 18px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    border-radius: 16px;
-    padding: 14px;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }}
-
-  .section-head {{
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }}
-
-  h2 {{ margin: 0; font-size: 16px; }}
-
-  table {{
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }}
-
-  th, td {{
-    border-bottom: 1px solid var(--border);
-    padding: 10px 10px;
-    text-align: left;
-    vertical-align: top;
-    font-size: 13px;
-    word-break: break-word;
-  }}
-
-  th {{
-    color: rgba(255,255,255,0.70);
-    font-weight: 650;
-    background: rgba(255,255,255,0.04);
-  }}
-
-  .muted {{ color: var(--muted); }}
-
-  .risk {{
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    font-size: 12px;
-    color: var(--text);
-    background: rgba(255,255,255,0.04);
-    white-space: nowrap;
-  }}
-
-  .risk-low {{ background: rgba(0,200,170,0.15); }}
-  .risk-medium {{ background: rgba(255,180,0,0.16); }}
-  .risk-high {{ background: rgba(255,70,70,0.18); }}
-  .risk-unknown {{ background: rgba(160,160,160,0.10); }}
+  {REPORT_STYLES}
 </style>
 </head>
 <body>
@@ -364,11 +442,11 @@ def build_html(payload: Dict[str, Any]) -> str:
         </div>
         <div class="kpi">
           <div class="label">Estimated monthly savings</div>
-          <div class="val">£{money(totals.get("total_monthly_savings", 0))} <span class="muted" style="font-size:14px;">({pct_display((payload.get("summary") or {}).get("savings_percent", 0))})</span></div>
+          <div class="val">£{money(totals.get("total_monthly_savings", 0))} <span class="muted kpi-note">({savings_percent})</span></div>
         </div>
       </div>
 
-      <section class="section" style="margin-top:10px;">
+      <section class="section section--compact">
         <div class="section-head">
           <h2>Top actions</h2>
         </div>

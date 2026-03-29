@@ -3,16 +3,13 @@
 {% block content %}
 
 <section class="hero">
-
-  <!-- Heading stays the same -->
   <h1>
     Turn <span class="highlight">idle AWS storage</span><br>
     into measurable cost control
   </h1>
 
-  <!-- Paragraph + AWS logo on the right -->
-  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap: 2.5rem;">
-    <p class="hero-context" style="flex: 1; margin: 0;">
+  <div class="hero-layout">
+    <p class="hero-context hero-copy">
       As cloud usage expands across teams and services, cost management becomes a moving target.
       Storage, in particular, grows quietly as logs, backups and historical data accumulate,
       long after their operational value has faded. Without continuous visibility, organisations
@@ -22,10 +19,8 @@
     <img
       src="{{ url_for('static', filename='images/aws.png') }}"
       alt="AWS"
-      style="width: 180px; height:auto; flex: 0 0 auto; opacity:0.95; filter: drop-shadow(0 12px 30px rgba(0,0,0,0.35)); margin-top: 6px;"
+      class="hero-logo"
     />
-
-    
   </div>
 
   <div class="stats">
@@ -46,21 +41,19 @@
   <div class="trust-bar">
     No credentials stored, read only cross account access, serverless AWS native execution.
   </div>
-  <div style="display:grid; grid-template-columns: 1.15fr 0.85fr; gap: 2.25rem; align-items:center; margin-top: 2.4rem;">
+  <div class="marketing-grid marketing-grid--feature">
 
-  <!-- IMAGE (centered) -->
-  <div style="display:flex; justify-content:center;">
+  <div class="marketing-media">
     <img
       src="{{ url_for('static', filename='images/cloudop.png') }}"
       alt="Benefits of cloud optimisation"
-      style="width: 640px; max-width: 100%; height:auto; border-radius: 22px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04); padding: 14px; filter: drop-shadow(0 18px 45px rgba(0,0,0,0.45));"
+      class="marketing-media-card"
     />
   </div>
 
-  <!-- TEXT (right side) -->
-  <div>
-    <h3 style="margin: 0 0 0.65rem 0;">Why cloud optimisation matters</h3>
-    <p style="margin: 0; line-height: 1.75; color: rgba(232, 238, 246, 0.92);">
+  <div class="marketing-media-copy">
+    <h3>Why cloud optimisation matters</h3>
+    <p>
       Cloud waste is rarely a single big mistake — it’s the accumulation of small inefficiencies:
       data kept beyond its value, capacity left running “just in case” and workloads sized for peaks
       that rarely happen. By increasing visibility and continuously checking usage signals, the platform
@@ -72,103 +65,94 @@
 </div>
 
 </section>
+<section class="marketing-shell">
 
-
-
-<!-- NEW: scroll section -->
-<section style="padding: 3.5rem 6rem; max-width: 1200px;">
-
-  <div style="margin-bottom: 2.25rem;">
-    <h2 style="margin: 0 0 0.6rem 0;">What you could save</h2>
-    <p style="margin: 0; line-height: 1.7; color: rgba(232, 238, 246, 0.92);">
+  <div class="marketing-section-intro">
+    <h2>What you could save</h2>
+    <p>
       Most AWS waste comes from services running when they are not needed, storage kept long past its value,
       and workloads that are larger than required. This platform flags the most common inefficiencies and
       emails you a report with estimated monthly savings.
     </p>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2.25rem;">
+  <div class="marketing-grid marketing-grid--two marketing-section-intro">
 
-    <!-- S3 -->
-    <div class="card" style="margin: 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
         <img
           src="{{ url_for('static', filename='images/s3.png') }}"
           alt="S3"
-          style="width:28px; height:28px; flex:0 0 28px; object-fit:contain; opacity:0.95; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));"
+          class="marketing-icon marketing-icon--service"
         />
-        <h3 style="margin:0;">Storage tiering (S3)</h3>
+        <h3>Storage tiering (S3)</h3>
       </div>
 
-      <p style="margin:0; line-height: 1.7;">
+      <p class="marketing-copy">
         Identify buckets with low access patterns and recommend moving data to cheaper tiers.
         Typical savings are <b>10 to 60%</b> on the affected storage, depending on access frequency.
       </p>
     </div>
 
-    <!-- RDS -->
-    <div class="card" style="margin: 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
         <img
           src="{{ url_for('static', filename='images/rds.png') }}"
           alt="RDS"
-          style="width:28px; height:28px; flex:0 0 28px; object-fit:contain; opacity:0.95; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));"
+          class="marketing-icon marketing-icon--service"
         />
-        <h3 style="margin:0;">Oversized databases (RDS)</h3>
+        <h3>Oversized databases (RDS)</h3>
       </div>
 
-      <p style="margin:0; line-height: 1.7;">
+      <p class="marketing-copy">
         Detect underutilised instances and propose smaller instance classes where safe.
         Typical savings are <b>20 to 50%</b> on the affected database spend.
       </p>
     </div>
 
-    <!-- ECS -->
-    <div class="card" style="margin: 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
         <img
           src="{{ url_for('static', filename='images/ecs.png') }}"
           alt="ECS"
-          style="width:28px; height:28px; flex:0 0 28px; object-fit:contain; opacity:0.95; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));"
+          class="marketing-icon marketing-icon--service"
         />
-        <h3 style="margin:0;">Idle containers (ECS)</h3>
+        <h3>Idle containers (ECS)</h3>
       </div>
 
-      <p style="margin:0; line-height: 1.7;">
+      <p class="marketing-copy">
         Find services with consistently low CPU or memory usage and recommend rightsizing.
         Typical savings are <b>15 to 40%</b> on the affected workloads.
       </p>
     </div>
 
-    <!-- EKS -->
-    <div class="card" style="margin: 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
         <img
           src="{{ url_for('static', filename='images/eks.png') }}"
           alt="EKS"
-          style="width:28px; height:28px; flex:0 0 28px; object-fit:contain; opacity:0.95; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));"
+          class="marketing-icon marketing-icon--service"
         />
-        <h3 style="margin:0;">Cluster efficiency (EKS)</h3>
+        <h3>Cluster efficiency (EKS)</h3>
       </div>
 
-      <p style="margin:0; line-height: 1.7;">
+      <p class="marketing-copy">
         Highlight inefficient node utilisation signals and opportunities to reduce capacity.
         Typical savings are <b>10 to 35%</b> where clusters are overprovisioned.
       </p>
     </div>
 
-    <!-- Spot (full width) -->
-    <div class="card" style="margin: 0; grid-column: 1 / -1;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+    <div class="card marketing-card marketing-card--wide">
+      <div class="marketing-card-head">
         <img
           src="{{ url_for('static', filename='images/spot.png') }}"
           alt="EC2 Spot"
-          style="width:28px; height:28px; flex:0 0 28px; object-fit:contain; opacity:0.95; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));"
+          class="marketing-icon marketing-icon--service"
         />
-        <h3 style="margin:0;">Spot usage (EC2 Spot Instances)</h3>
+        <h3>Spot usage (EC2 Spot Instances)</h3>
       </div>
 
-      <p style="margin:0; line-height: 1.7;">
+      <p class="marketing-copy">
         Recommend using Spot capacity for suitable workloads to cut compute costs.
         Spot can reduce eligible compute spend by <b>up to 70 to 90%</b>, depending on workload tolerance.
       </p>
@@ -176,63 +160,63 @@
 
   </div>
 
-  <div style="margin-bottom: 2.25rem;">
-    <h2 style="margin: 0 0 0.6rem 0;">What you receive</h2>
-    <p style="margin: 0; line-height: 1.7; color: rgba(232, 238, 246, 0.92);">
+  <div class="marketing-section-intro">
+    <h2>What you receive</h2>
+    <p>
       You receive an email report that lists recommendations by priority, shows the estimated monthly savings,
       and explains what to change. If no issues are found, you will receive a short confirmation summary.
     </p>
   </div>
 
-  <div style="margin-bottom: 2.25rem;">
-    <h2 style="margin: 0 0 0.6rem 0;">Current scope</h2>
-    <p style="margin: 0 0 0.9rem 0; line-height: 1.7; color: rgba(232, 238, 246, 0.92);">
+  <div class="marketing-section-intro">
+    <h2>Current scope</h2>
+    <p class="marketing-copy marketing-copy--chip-intro">
       The platform currently covers five of AWS’s most used services.
     </p>
 
-    <div style="display:flex; gap: 0.6rem; flex-wrap: wrap;">
+    <div class="marketing-chip-row">
 
-      <span class="badge" style="display:inline-flex; align-items:center; gap:8px;">
+      <span class="badge marketing-chip">
         <img
           src="{{ url_for('static', filename='images/s3.png') }}"
           alt="S3"
-          style="width:16px; height:16px; flex:0 0 16px; object-fit:contain; opacity:0.95;"
+          class="marketing-icon marketing-icon--badge"
         />
         Amazon S3
       </span>
 
-      <span class="badge" style="display:inline-flex; align-items:center; gap:8px;">
+      <span class="badge marketing-chip">
         <img
           src="{{ url_for('static', filename='images/rds.png') }}"
           alt="RDS"
-          style="width:16px; height:16px; flex:0 0 16px; object-fit:contain; opacity:0.95;"
+          class="marketing-icon marketing-icon--badge"
         />
         Amazon RDS
       </span>
 
-      <span class="badge" style="display:inline-flex; align-items:center; gap:8px;">
+      <span class="badge marketing-chip">
         <img
           src="{{ url_for('static', filename='images/ecs.png') }}"
           alt="ECS"
-          style="width:16px; height:16px; flex:0 0 16px; object-fit:contain; opacity:0.95;"
+          class="marketing-icon marketing-icon--badge"
         />
         Amazon ECS
       </span>
 
-      <span class="badge" style="display:inline-flex; align-items:center; gap:8px;">
+      <span class="badge marketing-chip">
         <img
           src="{{ url_for('static', filename='images/eks.png') }}"
           alt="EKS"
-          style="width:16px; height:16px; flex:0 0 16px; object-fit:contain; opacity:0.95;"
+          class="marketing-icon marketing-icon--badge"
         />
         Amazon EKS
       </span>
 
-      <span class="badge" style="display:inline-flex; align-items:center; gap:8px;">
+      <span class="badge marketing-chip">
         <img
           src="{{ url_for('static', filename='images/spot.png') }}"
           alt="EC2 Spot"
-          style="width:16px; height:16px; flex:0 0 16px; object-fit:contain; opacity:0.95;"
+          class="marketing-icon marketing-icon--badge"
         />
         EC2 Spot Instances
       </span>
@@ -240,23 +224,19 @@
     </div>
   </div>
 
-  <div style="display:flex; gap: 0.75rem; flex-wrap: wrap; align-items:center;">
-    <a href="{{ url_for('apply_form') }}"
-       style="text-decoration:none; padding: 0.75rem 1.1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);">
+  <div class="marketing-actions">
+    <a href="{{ url_for('apply_form') }}" class="marketing-action-link">
       Apply for access
     </a>
 
-    <a href="{{ url_for('onboarding') }}"
-       style="text-decoration:none; padding: 0.75rem 1.1rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);">
+    <a href="{{ url_for('onboarding') }}" class="marketing-action-link">
       View onboarding steps
     </a>
 
-    <span style="color:#94a3b8;">
+    <span class="marketing-action-note">
       No credentials stored, read only access and you stay in control.
     </span>
   </div>
 
 </section>
-<!-- END NEW -->
-
 {% endblock %}

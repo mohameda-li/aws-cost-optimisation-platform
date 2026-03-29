@@ -90,9 +90,12 @@ def lambda_handler(event, context):
 
         buckets_response = s3.list_buckets()
         bucket_names = [bucket["Name"] for bucket in buckets_response.get("Buckets", [])]
+        excluded_buckets = {report_bucket} if report_bucket else set()
 
         if target_buckets:
             bucket_names = [name for name in bucket_names if name in target_buckets]
+
+        bucket_names = [name for name in bucket_names if name not in excluded_buckets]
 
         for bucket_name in bucket_names:
             buckets_scanned += 1
@@ -174,16 +177,17 @@ def lambda_handler(event, context):
             "optimised_monthly_cost": float(savings["projected_cost"]),
             "total_monthly_savings": float(savings["estimated_savings"]),
         },
-        "details": {
-            "region": region,
-            "report_bucket": report_bucket,
-            "report_email": report_email,
-            "target_buckets": target_buckets,
-            "buckets_scanned": buckets_scanned,
-            "objects_scanned": objects_scanned,
-            "rows_written": rows_written,
-            "skipped_buckets": skipped_buckets,
-            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "details": {
+                "region": region,
+                "report_bucket": report_bucket,
+                "report_email": report_email,
+                "target_buckets": target_buckets,
+                "excluded_buckets": sorted(excluded_buckets),
+                "buckets_scanned": buckets_scanned,
+                "objects_scanned": objects_scanned,
+                "rows_written": rows_written,
+                "skipped_buckets": skipped_buckets,
+                "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         },
     }
 

@@ -1,13 +1,21 @@
 import importlib
 import json
 import os
+import smtplib
 from datetime import datetime, timezone
+from email.message import EmailMessage
+from html import escape
 from pathlib import Path
 from uuid import uuid4
 from typing import Any, Dict, List, Tuple
 
 import boto3
 from report_generator import generate_report_files
+
+try:
+    from botocore.config import Config
+except Exception:  # pragma: no cover - botocore may be unavailable in stripped test envs
+    Config = None
 
 
 MONEY_KEYS_EXACT = {
@@ -31,6 +39,7 @@ SERVICE_MODULES = {
     "ecs": "ecs.lambda_function",
     "eks": "eks.lambda_function",
 }
+MAX_REPORT_RUNS_PER_CUSTOMER = 20
 
 
 def _parse_body(resp: Dict[str, Any]) -> Dict[str, Any]:
@@ -121,6 +130,252 @@ def _load_service_handler(service_name: str):
     if handler is None:
         raise ValueError(f"Module '{module_name}' does not expose a handler")
     return handler
+
+
+def _build_report_links(
+    s3_client,
+    bucket: str,
+    s3_keys: Dict[str, str],
+    expires_in: int = 60 * 60 * 24 * 7,
+    region: str = "",
+) -> Dict[str, str]:
+    links = {}
+    presign_client = s3_client
+
+    if region:
+        client_kwargs = {
+            "service_name": "s3",
+            "region_name": region,
+            "endpoint_url": f"https://s3.{region}.amazonaws.com",
+        }
+        if Config is not None:
+            client_kwargs["config"] = Config(
+                signature_version="s3v4",
+                s3={"addressing_style": "virtual"},
+            )
+        try:
+            presign_client = boto3.client(**client_kwargs)
+        except Exception:
+            presign_client = s3_client
+
+    html_key = s3_keys.get("html_key")
+    if html_key:
+        links["html_url"] = presign_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": html_key},
+            ExpiresIn=expires_in,
+        )
+
+    json_key = s3_keys.get("json_key")
+    if json_key:
+        links["json_url"] = presign_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": json_key},
+            ExpiresIn=expires_in,
+        )
+
+    return links
+
+
+def _build_notification_message(payload: Dict[str, Any]) -> str:
+    summary = payload.get("summary") or {}
+    report_files = payload.get("report_files") or {}
+    report_links = report_files.get("report_links") or {}
+    customer = payload.get("customer", "your organisation")
+    total_savings = payload.get("totals", {}).get("total_monthly_savings", 0.0)
+    enabled_services = ", ".join(summary.get("enabled_services") or []) or "none"
+    html_url = report_links.get("html_url")
+    json_url = report_links.get("json_url")
+
+    lines = [
+        "Hello,",
+        "",
+        f"Your scheduled FinOps Automation report for {customer} is now ready.",
+        "",
+        "Use the links below to open your latest report.",
+    ]
+
+    if html_url:
+        lines.extend(["", "View report", html_url])
+    if json_url:
+        lines.extend(["", "Download data (JSON)", json_url])
+
+    lines.extend(
+        [
+            "",
+        "Summary",
+        f"- Run ID: {payload.get('run_id', '')}",
+        f"- Generated at: {payload.get('timestamp', '')}",
+        f"- Enabled services: {enabled_services}",
+        f"- Estimated monthly savings: GBP {total_savings:.2f}",
+        f"- Partial run: {'Yes' if summary.get('partial_run') else 'No'}",
+        ]
+    )
+
+    if summary.get("errors"):
+        lines.extend(
+            [
+                "",
+                "Items to review",
+                *[f"- {item.get('service')}: {item.get('error')}" for item in summary.get("errors", [])],
+            ]
+        )
+
+    lines.extend(
+        [
+            "",
+            "Thank you,",
+            "FinOps Automation",
+            "",
+            "This is an automated notification.",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def _build_notification_html(payload: Dict[str, Any]) -> str:
+    summary = payload.get("summary") or {}
+    report_links = (payload.get("report_files") or {}).get("report_links") or {}
+    customer = escape(str(payload.get("customer", "your organisation")))
+    run_id = escape(str(payload.get("run_id", "")))
+    generated_at = escape(str(payload.get("timestamp", "")))
+    enabled_services = escape(", ".join(summary.get("enabled_services") or []) or "none")
+    total_savings = float(payload.get("totals", {}).get("total_monthly_savings", 0.0) or 0.0)
+    partial_run = "Yes" if summary.get("partial_run") else "No"
+
+    actions = []
+    html_url = report_links.get("html_url")
+    if html_url:
+        actions.append(
+            f'<a href="{escape(html_url, quote=True)}" '
+            'style="display:inline-block;padding:12px 18px;background:#1f6feb;color:#ffffff;'
+            'text-decoration:none;border-radius:8px;font-weight:600;margin:0 12px 12px 0;">'
+            'View report</a>'
+        )
+    json_url = report_links.get("json_url")
+    if json_url:
+        actions.append(
+            f'<a href="{escape(json_url, quote=True)}" '
+            'style="display:inline-block;padding:12px 18px;background:#eef2ff;color:#1e3a8a;'
+            'text-decoration:none;border-radius:8px;font-weight:600;border:1px solid #c7d2fe;'
+            'margin:0 12px 12px 0;">Download data</a>'
+        )
+
+    error_section = ""
+    if summary.get("errors"):
+        error_items = "".join(
+            f"<li><strong>{escape(str(item.get('service', 'service')))}:</strong> "
+            f"{escape(str(item.get('error', 'Unknown error')))}</li>"
+            for item in summary.get("errors", [])
+        )
+        error_section = (
+            '<div style="margin-top:24px;">'
+            '<h3 style="margin:0 0 8px;font-size:18px;color:#111827;">Items to review</h3>'
+            f'<ul style="margin:0;padding-left:20px;color:#374151;">{error_items}</ul>'
+            "</div>"
+        )
+
+    return (
+        "<html><body style=\"margin:0;padding:0;background:#f5f7fb;\">"
+        "<div style=\"max-width:640px;margin:0 auto;padding:32px 20px;font-family:Arial,sans-serif;"
+        "color:#111827;line-height:1.6;\">"
+        "<div style=\"background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;\">"
+        "<p style=\"margin:0 0 16px;font-size:16px;\">Hello,</p>"
+        f"<p style=\"margin:0 0 20px;font-size:16px;\">Your scheduled FinOps Automation report for "
+        f"<strong>{customer}</strong> is now ready.</p>"
+        f"<div style=\"margin:24px 0;\">{''.join(actions)}</div>"
+        "<h3 style=\"margin:24px 0 8px;font-size:18px;color:#111827;\">Summary</h3>"
+        "<ul style=\"margin:0;padding-left:20px;color:#374151;\">"
+        f"<li><strong>Run ID:</strong> {run_id}</li>"
+        f"<li><strong>Generated at:</strong> {generated_at}</li>"
+        f"<li><strong>Enabled services:</strong> {enabled_services}</li>"
+        f"<li><strong>Estimated monthly savings:</strong> GBP {total_savings:.2f}</li>"
+        f"<li><strong>Partial run:</strong> {partial_run}</li>"
+        "</ul>"
+        f"{error_section}"
+        "<p style=\"margin:24px 0 0;font-size:16px;\">Thank you,<br>FinOps Automation</p>"
+        "<p style=\"margin:24px 0 0;color:#6b7280;font-size:13px;\">This is an automated notification.</p>"
+        "</div></div></body></html>"
+    )
+
+
+def _send_report_email(payload: Dict[str, Any]) -> Dict[str, Any]:
+    smtp_host = os.getenv("SMTP_HOST", "").strip()
+    smtp_sender = os.getenv("SMTP_SENDER", "").strip()
+    recipients = [email.strip() for email in os.getenv("NOTIFICATION_EMAIL", "").split(",") if email.strip()]
+
+    if not smtp_host or not smtp_sender or not recipients:
+        return {
+            "status": "skipped",
+            "reason": "SMTP not configured or no notification recipients provided",
+        }
+
+    message = EmailMessage()
+    message["Subject"] = f"Your scheduled FinOps report is ready - {payload.get('customer', 'Customer')}"
+    message["From"] = smtp_sender
+    message["To"] = ", ".join(recipients)
+    message.set_content(_build_notification_message(payload))
+    message.add_alternative(_build_notification_html(payload), subtype="html")
+
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME", "").strip()
+    smtp_password = os.getenv("SMTP_PASSWORD", "")
+    smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no"}
+
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as smtp:
+        if smtp_use_tls:
+            smtp.starttls()
+        if smtp_username:
+            smtp.login(smtp_username, smtp_password)
+        smtp.send_message(message)
+
+    return {
+        "status": "sent",
+        "recipients": recipients,
+        "sender": smtp_sender,
+        "subject": message["Subject"],
+    }
+
+
+def _prune_old_reports(s3_client, bucket: str, customer: str, keep_latest: int = MAX_REPORT_RUNS_PER_CUSTOMER) -> Dict[str, Any]:
+    prefix = f"reports/{customer}/"
+    paginator = s3_client.get_paginator("list_objects_v2")
+    objects: List[Dict[str, Any]] = []
+
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            key = obj.get("Key")
+            if not key or not (key.endswith(".html") or key.endswith(".json")):
+                continue
+            objects.append({"Key": key, "LastModified": obj.get("LastModified")})
+
+    run_groups: Dict[str, List[Dict[str, Any]]] = {}
+    for obj in objects:
+        run_id = Path(obj["Key"]).stem
+        run_groups.setdefault(run_id, []).append(obj)
+
+    ordered_runs = sorted(
+        run_groups.items(),
+        key=lambda item: max((entry.get("LastModified") for entry in item[1]), default=datetime.min.replace(tzinfo=timezone.utc)),
+        reverse=True,
+    )
+
+    stale_runs = ordered_runs[keep_latest:]
+    keys_to_delete = [{"Key": entry["Key"]} for _, entries in stale_runs for entry in entries]
+
+    deleted = 0
+    if keys_to_delete:
+        for idx in range(0, len(keys_to_delete), 1000):
+            batch = keys_to_delete[idx : idx + 1000]
+            response = s3_client.delete_objects(Bucket=bucket, Delete={"Objects": batch, "Quiet": True})
+            deleted += len(response.get("Deleted", []))
+
+    return {
+        "kept_runs": min(len(ordered_runs), keep_latest),
+        "deleted_runs": len(stale_runs),
+        "deleted_objects": deleted,
+    }
 
 
 def _decorate_recommendation_savings(services: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
@@ -430,6 +685,31 @@ def handler(event, context):
 
         platform_payload["report_files"]["s3_bucket"] = report_bucket
         platform_payload["report_files"]["s3_keys"] = report_s3_keys
+
+        try:
+            platform_payload["report_files"]["report_links"] = _build_report_links(
+                s3,
+                report_bucket,
+                report_s3_keys,
+                region=region,
+            )
+        except Exception as e:
+            platform_payload["report_files"]["report_links_error"] = str(e)
+
+        try:
+            platform_payload["report_files"]["retention"] = _prune_old_reports(
+                s3,
+                report_bucket,
+                customer,
+                keep_latest=MAX_REPORT_RUNS_PER_CUSTOMER,
+            )
+        except Exception as e:
+            platform_payload["report_files"]["retention_error"] = str(e)
+
+    try:
+        platform_payload["report_files"]["email_notification"] = _send_report_email(platform_payload)
+    except Exception as e:
+        platform_payload["report_files"]["email_notification_error"] = str(e)
 
     platform_payload = _normalise_payload(platform_payload)
 

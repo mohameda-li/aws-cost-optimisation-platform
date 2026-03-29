@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from functools import wraps
 from email.message import EmailMessage
 import json
+import os
 import re
 import secrets
 import smtplib
@@ -226,7 +227,7 @@ def update_account_password(cursor, account, new_password: str):
     )
 
 
-def build_customer_bundle_data(data, enabled_service_codes, report_row):
+def build_customer_bundle_data(data, enabled_service_codes, report_rows):
     frequency_map = {
         "daily": "rate(1 day)",
         "weekly": "rate(7 days)",
@@ -235,18 +236,28 @@ def build_customer_bundle_data(data, enabled_service_codes, report_row):
 
     enabled_services = {service_code: True for service_code in enabled_service_codes}
     org_slug = slugify(data["organisation_name"])
+    recipient_emails = []
+    for row in report_rows or []:
+        email = (row or {}).get("report_email", "").strip()
+        if email and email not in recipient_emails:
+            recipient_emails.append(email)
+
+    report_bucket_name = f"{org_slug}-{data['organisation_id']}-finops-reports"
 
     return {
         "aws_region": data["aws_region"] or "eu-west-2",
         "customer_id": f"org_{data['organisation_id']}",
         "company_name": data["organisation_name"],
-        "report_bucket_name": f"{org_slug}-finops-reports",
-        "notification_email": (
-            report_row["report_email"]
-            if report_row and report_row.get("report_email")
-            else data["contact_email"]
-        ),
+        "report_bucket_name": report_bucket_name,
+        "notification_email": ",".join(recipient_emails) if recipient_emails else data["contact_email"],
         "schedule_expression": frequency_map.get(data["report_frequency"], "rate(7 days)"),
+        "smtp_host": os.getenv("SMTP_HOST", "").strip(),
+        "smtp_port": int(os.getenv("SMTP_PORT", "587")),
+        "smtp_username": os.getenv("SMTP_USERNAME", "").strip(),
+        "smtp_password": os.getenv("SMTP_PASSWORD", ""),
+        "smtp_sender": (os.getenv("SMTP_SENDER") or os.getenv("SMTP_USERNAME") or "").strip(),
+        "smtp_use_tls": (os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no"}),
+        "run_initial_report_on_apply": True,
         "enabled_service_codes": enabled_service_codes,
         "services": {
             "s3": enabled_services.get("s3", False),

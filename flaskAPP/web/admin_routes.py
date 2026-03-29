@@ -401,12 +401,11 @@ def register_admin_routes(app, state):
                     FROM onboarding_report_recipients
                     WHERE onboarding_id = %s
                     ORDER BY report_email
-                    LIMIT 1
                     """,
                     (data["onboarding_id"],),
                 )
-                report_row = cursor.fetchone()
-                customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_row)
+                report_rows = cursor.fetchall()
+                customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_rows)
                 bundle_info = state.create_customer_bundle(customer_data)
                 logger.info(
                     "Customer bundle created for application_id=%s as %s",
@@ -600,16 +599,15 @@ def register_admin_routes(app, state):
                 FROM onboarding_report_recipients
                 WHERE onboarding_id = %s
                 ORDER BY report_email
-                LIMIT 1
                 """,
                 (data["onboarding_id"],),
             )
-            report_row = cursor.fetchone()
+            report_rows = cursor.fetchall()
         finally:
             cursor.close()
             conn.close()
 
-        customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_row)
+        customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_rows)
         try:
             bundle_info = state.create_customer_bundle(customer_data)
         except Exception:

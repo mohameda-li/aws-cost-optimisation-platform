@@ -105,6 +105,25 @@ def _list_all_services(cluster: str) -> list[str]:
     return arns
 
 
+def _list_all_clusters() -> list[str]:
+    arns = []
+    token = None
+    while True:
+        kwargs = {}
+        if token:
+            kwargs["nextToken"] = token
+        resp = ecs.list_clusters(**kwargs)
+        arns.extend(resp.get("clusterArns", []) or [])
+        token = resp.get("nextToken")
+        if not token:
+            break
+    return arns
+
+
+def _cluster_name_from_arn(cluster_arn: str) -> str:
+    return str(cluster_arn).rsplit("/", 1)[-1]
+
+
 def _chunks(items, size=10):
     for i in range(0, len(items), size):
         yield items[i:i + size]
@@ -154,15 +173,10 @@ def _parse_taskdef_cpu_mem(task_def: dict) -> Tuple[Optional[float], Optional[fl
 
 
 def _write_live_usage_csv() -> str:
-    if not ECS_CLUSTER.strip():
-        raise ValueError("ECS_CLUSTER environment variable is required")
-
     out_dir = Path("/tmp/ecs")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_csv = out_dir / "ecs_usage_live.csv"
     running_hours = LOOKBACK_DAYS * 24
-
-    service_arns = _list_all_services(ECS_CLUSTER)
 
     with out_csv.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -177,41 +191,51 @@ def _write_live_usage_csv() -> str:
             "running_hours",
         ])
 
-        if not service_arns:
+        clusters = [ECS_CLUSTER.strip()] if ECS_CLUSTER.strip() else [
+            _cluster_name_from_arn(cluster_arn) for cluster_arn in _list_all_clusters()
+        ]
+        clusters = [cluster for cluster in clusters if cluster]
+
+        if not clusters:
             return str(out_csv)
 
-        for batch in _chunks(service_arns, size=10):
-            resp = ecs.describe_services(cluster=ECS_CLUSTER, services=batch)
-            services = resp.get("services", []) or []
+        for cluster_name in clusters:
+            service_arns = _list_all_services(cluster_name)
+            if not service_arns:
+                continue
 
-            for service in services:
-                service_name = service.get("serviceName", "")
-                desired = int(service.get("desiredCount") or 0)
-                running = int(service.get("runningCount") or 0)
+            for batch in _chunks(service_arns, size=10):
+                resp = ecs.describe_services(cluster=cluster_name, services=batch)
+                services = resp.get("services", []) or []
 
-                vcpu_per_task = None
-                mem_gb_per_task = None
-                task_def_arn = service.get("taskDefinition")
+                for service in services:
+                    service_name = service.get("serviceName", "")
+                    desired = int(service.get("desiredCount") or 0)
+                    running = int(service.get("runningCount") or 0)
 
-                if task_def_arn:
-                    try:
-                        task_def = ecs.describe_task_definition(taskDefinition=task_def_arn).get("taskDefinition") or {}
-                        vcpu_per_task, mem_gb_per_task = _parse_taskdef_cpu_mem(task_def)
-                    except Exception:
-                        vcpu_per_task, mem_gb_per_task = None, None
+                    vcpu_per_task = None
+                    mem_gb_per_task = None
+                    task_def_arn = service.get("taskDefinition")
 
-                cpu_avg, mem_avg = _service_cpu_mem_avg(ECS_CLUSTER, service_name)
+                    if task_def_arn:
+                        try:
+                            task_def = ecs.describe_task_definition(taskDefinition=task_def_arn).get("taskDefinition") or {}
+                            vcpu_per_task, mem_gb_per_task = _parse_taskdef_cpu_mem(task_def)
+                        except Exception:
+                            vcpu_per_task, mem_gb_per_task = None, None
 
-                writer.writerow([
-                    service_name,
-                    desired,
-                    running,
-                    round(vcpu_per_task, 2) if vcpu_per_task is not None else "",
-                    round(mem_gb_per_task, 2) if mem_gb_per_task is not None else "",
-                    round(cpu_avg, 2) if cpu_avg is not None else "",
-                    round(mem_avg, 2) if mem_avg is not None else "",
-                    running_hours,
-                ])
+                    cpu_avg, mem_avg = _service_cpu_mem_avg(cluster_name, service_name)
+
+                    writer.writerow([
+                        f"{cluster_name}/{service_name}",
+                        desired,
+                        running,
+                        round(vcpu_per_task, 2) if vcpu_per_task is not None else "",
+                        round(mem_gb_per_task, 2) if mem_gb_per_task is not None else "",
+                        round(cpu_avg, 2) if cpu_avg is not None else "",
+                        round(mem_avg, 2) if mem_avg is not None else "",
+                        running_hours,
+                    ])
 
     return str(out_csv)
 
@@ -250,7 +274,7 @@ def handler(event, context):
                 "per_resource_costs": ecs_savings.get("per_resource_costs", {}),
                 "details": {
                     "region": AWS_REGION,
-                    "cluster": ECS_CLUSTER,
+                    "cluster": ECS_CLUSTER or "all",
                     "lookback_days": LOOKBACK_DAYS,
                     "cpu_threshold": CPU_THRESHOLD,
                     "mem_threshold": MEM_THRESHOLD,

@@ -19,8 +19,45 @@ variable "report_bucket_name" {
 }
 
 variable "notification_email" {
-  description = "Email address for report notifications"
+  description = "Comma-separated email addresses for report notifications"
   type        = string
+}
+
+variable "smtp_host" {
+  description = "SMTP host for direct report emails"
+  type        = string
+}
+
+variable "smtp_port" {
+  description = "SMTP port for direct report emails"
+  type        = number
+}
+
+variable "smtp_username" {
+  description = "SMTP username for direct report emails"
+  type        = string
+  sensitive   = true
+}
+
+variable "smtp_password" {
+  description = "SMTP password for direct report emails"
+  type        = string
+  sensitive   = true
+}
+
+variable "smtp_sender" {
+  description = "From address used for direct report emails"
+  type        = string
+}
+
+variable "smtp_use_tls" {
+  description = "Whether SMTP delivery should use TLS"
+  type        = bool
+}
+
+variable "run_initial_report_on_apply" {
+  description = "Whether Terraform should trigger an initial report run immediately after deployment"
+  type        = bool
 }
 
 variable "schedule_expression" {

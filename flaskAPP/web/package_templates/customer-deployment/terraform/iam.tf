@@ -30,9 +30,11 @@ resource "aws_iam_role_policy" "lambda_custom_policy" {
       {
         Effect = "Allow"
         Action = [
+          "s3:ListAllMyBuckets",
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
+          "s3:DeleteObject",
           "s3:HeadObject",
           "s3:GetBucketLocation",
           "s3:GetLifecycleConfiguration",
@@ -57,7 +59,8 @@ resource "aws_iam_role_policy" "lambda_custom_policy" {
           "ec2:DescribeSpotPriceHistory",
           "ec2:DescribeLaunchTemplateVersions",
           "pricing:GetProducts",
-          "sns:Publish"
+          "ses:SendEmail",
+          "ses:SendRawEmail"
         ]
         Resource = "*"
       }

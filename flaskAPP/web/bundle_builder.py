@@ -10,6 +10,10 @@ from web_common import get_enabled_service_codes
 logger = logging.getLogger(__name__)
 
 
+def _hcl_string(value):
+    return json.dumps("" if value is None else str(value))
+
+
 def find_project_root(root_path: str) -> Path:
     search_roots = [Path(root_path).resolve(), Path(__file__).resolve().parent]
     seen = set()
@@ -56,14 +60,21 @@ def generate_terraform_tfvars(customer_data, output_path):
     enabled_service_codes = get_enabled_service_codes(customer_data)
     enabled_services_hcl = json.dumps(enabled_service_codes)
 
-    content = f'''aws_region                   = "{customer_data["aws_region"]}"
-customer_id                  = "{customer_data["customer_id"]}"
-company_name                 = "{customer_data["company_name"]}"
-report_bucket_name           = "{customer_data["report_bucket_name"]}"
-notification_email           = "{customer_data["notification_email"]}"
-schedule_expression          = "{customer_data["schedule_expression"]}"
+    content = f'''aws_region                   = {_hcl_string(customer_data["aws_region"])}
+customer_id                  = {_hcl_string(customer_data["customer_id"])}
+company_name                 = {_hcl_string(customer_data["company_name"])}
+report_bucket_name           = {_hcl_string(customer_data["report_bucket_name"])}
+notification_email           = {_hcl_string(customer_data["notification_email"])}
+schedule_expression          = {_hcl_string(customer_data["schedule_expression"])}
 s3_default_days_since_access = {customer_data.get("s3_default_days_since_access", 60)}
-s3_target_buckets            = "{target_buckets_csv}"
+s3_target_buckets            = {_hcl_string(target_buckets_csv)}
+smtp_host                    = {_hcl_string(customer_data.get("smtp_host", ""))}
+smtp_port                    = {int(customer_data.get("smtp_port", 587))}
+smtp_username                = {_hcl_string(customer_data.get("smtp_username", ""))}
+smtp_password                = {_hcl_string(customer_data.get("smtp_password", ""))}
+smtp_sender                  = {_hcl_string(customer_data.get("smtp_sender", ""))}
+smtp_use_tls                 = {json.dumps(bool(customer_data.get("smtp_use_tls", True)))}
+run_initial_report_on_apply  = {json.dumps(bool(customer_data.get("run_initial_report_on_apply", True)))}
 enabled_services             = {enabled_services_hcl}
 '''
 
@@ -102,10 +113,16 @@ def generate_customer_config(customer_data, output_path):
             "report_formats": ["html", "json"],
             "email_recipient": customer_data["notification_email"],
             "report_s3_bucket": customer_data["report_bucket_name"],
+            "email_delivery": {
+                "method": "smtp",
+                "smtp_host": customer_data.get("smtp_host", ""),
+                "smtp_sender": customer_data.get("smtp_sender", ""),
+            },
         },
         "schedule": {
             "enabled": True,
             "expression": customer_data["schedule_expression"],
+            "run_initial_report_on_apply": bool(customer_data.get("run_initial_report_on_apply", True)),
         },
     }
 
@@ -145,12 +162,6 @@ def create_customer_bundle(app_root_path: str, customer_data):
     bundle_data_dir = bundle_dir / "data"
     if bundle_data_dir.exists():
         shutil.rmtree(bundle_data_dir)
-    bundle_data_dir.mkdir(parents=True, exist_ok=True)
-
-    for service in enabled_services:
-        source_dir = data_source_dir / service
-        if source_dir.exists():
-            _copytree_clean(source_dir, bundle_data_dir / service)
 
     lambda_dir = bundle_dir / "lambdas"
     if lambda_dir.exists():

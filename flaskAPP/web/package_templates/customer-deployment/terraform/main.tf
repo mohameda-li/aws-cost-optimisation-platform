@@ -41,9 +41,14 @@ resource "aws_lambda_function" "runner" {
       REPORT_BUCKET_NAME           = var.report_bucket_name
       NOTIFICATION_EMAIL           = var.notification_email
       ENABLED_SERVICES             = join(",", var.enabled_services)
-      AWS_REGION                   = var.aws_region
       S3_DEFAULT_DAYS_SINCE_ACCESS = tostring(var.s3_default_days_since_access)
       S3_TARGET_BUCKETS            = var.s3_target_buckets
+      SMTP_HOST                    = var.smtp_host
+      SMTP_PORT                    = tostring(var.smtp_port)
+      SMTP_USERNAME                = var.smtp_username
+      SMTP_PASSWORD                = var.smtp_password
+      SMTP_SENDER                  = var.smtp_sender
+      SMTP_USE_TLS                 = tostring(var.smtp_use_tls)
     }
   }
 
@@ -145,4 +150,27 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   function_name = aws_lambda_function.runner.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.runner_schedule.arn
+}
+
+# Trigger one report immediately after deployment so customers can confirm
+# the platform is working without waiting for the first scheduled run.
+resource "terraform_data" "initial_report_run" {
+  count = var.run_initial_report_on_apply ? 1 : 0
+
+  triggers_replace = {
+    runner_name = aws_lambda_function.runner.function_name
+    runner_arn  = aws_lambda_function.runner.arn
+  }
+
+  provisioner "local-exec" {
+    # Terraform writes the Lambda response to a local file that can be opened
+    # if the initial run needs debugging after apply completes.
+    command = "aws lambda invoke --function-name ${aws_lambda_function.runner.function_name} --region ${var.aws_region} ${path.module}/initial_report_response.json >/dev/null"
+  }
+
+  depends_on = [
+    aws_lambda_function.runner,
+    aws_cloudwatch_event_target.runner_target,
+    aws_lambda_permission.allow_eventbridge,
+  ]
 }

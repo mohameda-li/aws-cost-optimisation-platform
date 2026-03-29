@@ -24,6 +24,7 @@ class TestBundleGeneration(unittest.TestCase):
             "report_bucket_name": "northshore-reports",
             "notification_email": "ops@example.com",
             "schedule_expression": "rate(7 days)",
+            "run_initial_report_on_apply": True,
             "s3_default_days_since_access": 60,
             "s3_target_buckets": ["a-bucket"],
             "enabled_service_codes": ["s3", "rds"],
@@ -46,13 +47,15 @@ class TestBundleGeneration(unittest.TestCase):
             self.assertTrue((bundle_dir / "lambdas" / "s3_optimiser.zip").exists())
             self.assertTrue((bundle_dir / "lambdas" / "rds_optimiser.zip").exists())
             self.assertFalse((bundle_dir / "lambdas" / "ecs_optimiser.zip").exists())
-            self.assertTrue((bundle_dir / "data" / "s3" / "s3_pricing.csv").exists())
-            self.assertTrue((bundle_dir / "data" / "rds" / "rds_pricing.csv").exists())
-            self.assertFalse((bundle_dir / "data" / "ecs").exists())
+            self.assertFalse((bundle_dir / "data").exists())
 
             config = json.loads((bundle_dir / "config" / "customer_config.json").read_text(encoding="utf-8"))
             self.assertEqual(["s3", "rds"], config["enabled_services"])
             self.assertEqual(["html", "json"], config["reporting"]["report_formats"])
+            self.assertTrue(config["schedule"]["run_initial_report_on_apply"])
+
+            tfvars = (bundle_dir / "terraform" / "terraform.tfvars").read_text(encoding="utf-8")
+            self.assertIn("run_initial_report_on_apply  = true", tfvars)
 
             with zipfile.ZipFile(bundle_dir / "lambdas" / "runner.zip") as runner_zip:
                 names = set(runner_zip.namelist())
@@ -60,6 +63,7 @@ class TestBundleGeneration(unittest.TestCase):
                 self.assertIn("s3/lambda_function.py", names)
                 self.assertIn("rds/lambda_function.py", names)
                 self.assertIn("data/s3/s3_pricing.csv", names)
+                self.assertIn("data/rds/rds_pricing.csv", names)
                 self.assertNotIn("ecs/lambda_function.py", names)
 
 
