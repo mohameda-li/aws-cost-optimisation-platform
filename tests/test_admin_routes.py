@@ -534,7 +534,7 @@ class TestAdminRoutes(unittest.TestCase):
             "app.build_customer_bundle_data", return_value={"customer_id": "org_7"}
         ), patch("app.create_customer_bundle", return_value={"zip_filename": "org_7.zip"}), patch(
             "admin_routes.os.path.exists", return_value=True
-        ), patch("admin_routes.send_from_directory", return_value="sent") as send_bundle:
+        ), patch("admin_routes.send_file", return_value="sent") as send_bundle:
             response = self.client.get("/admin/download-bundle/1")
 
         self.assertEqual(200, response.status_code)
@@ -556,7 +556,7 @@ class TestAdminRoutes(unittest.TestCase):
             "app.build_customer_bundle_data", return_value={"customer_id": "org_7"}
         ), patch("app.create_customer_bundle", return_value={"zip_filename": "org_7.zip"}), patch(
             "admin_routes.os.path.exists", return_value=True
-        ), patch("admin_routes.send_from_directory", return_value="sent") as send_bundle:
+        ), patch("admin_routes.send_file", return_value="sent") as send_bundle:
             response = self.client.get("/admin/download-bundle/1")
 
         self.assertEqual(200, response.status_code)
@@ -578,7 +578,7 @@ class TestAdminRoutes(unittest.TestCase):
             "app.build_customer_bundle_data", return_value={"customer_id": "org_7"}
         ), patch("app.create_customer_bundle", return_value={"zip_filename": "org_7.zip"}), patch(
             "admin_routes.os.path.exists", return_value=True
-        ), patch("admin_routes.send_from_directory", return_value="sent") as send_bundle:
+        ), patch("admin_routes.send_file", return_value="sent") as send_bundle:
             response = self.client.get("/admin/download-bundle/1")
 
         self.assertEqual(200, response.status_code)

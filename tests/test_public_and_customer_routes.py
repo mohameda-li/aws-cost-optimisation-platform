@@ -489,7 +489,7 @@ class TestPublicAndCustomerRoutes(unittest.TestCase):
             "app.build_customer_bundle_data", return_value={"customer_id": "org_7"}
         ), patch("app.create_customer_bundle", return_value={"zip_filename": "org_7.zip"}), patch(
             "customer_routes.os.path.exists", return_value=True
-        ), patch("customer_routes.send_from_directory", return_value="sent") as send_bundle:
+        ), patch("customer_routes.send_file", return_value="sent") as send_bundle:
             response = self.client.get("/customer/download-bundle/1")
 
         self.assertEqual(200, response.status_code)
