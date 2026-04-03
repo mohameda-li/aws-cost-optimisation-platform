@@ -48,6 +48,10 @@ def _parse_body(resp: Dict[str, Any]) -> Dict[str, Any]:
     if resp.get("statusCode") != 200:
         raise ValueError(f"Handler failed with statusCode={resp.get('statusCode')}")
     body = resp.get("body", "{}")
+    if isinstance(body, dict):
+        return body
+    if body in (None, ""):
+        return {}
     return json.loads(body)
 
 
@@ -318,7 +322,13 @@ def _send_report_email(payload: Dict[str, Any]) -> Dict[str, Any]:
     message.set_content(_build_notification_message(payload))
     message.add_alternative(_build_notification_html(payload), subtype="html")
 
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    try:
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    except (TypeError, ValueError):
+        return {
+            "status": "error",
+            "reason": "Invalid SMTP port configuration",
+        }
     smtp_username = os.getenv("SMTP_USERNAME", "").strip()
     smtp_password = os.getenv("SMTP_PASSWORD", "")
     smtp_use_tls = os.getenv("SMTP_USE_TLS", "true").strip().lower() not in {"0", "false", "no"}

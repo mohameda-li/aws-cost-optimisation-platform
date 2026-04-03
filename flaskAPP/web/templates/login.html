@@ -1,64 +1,84 @@
 {% extends "base.html" %}
-{% set page_type = "internal" %}
 
 {% block content %}
 
-<section class="auth-shell">
+<section class="auth-shell auth-shell--login">
 
-  <div class="card auth-card">
-    <h1 class="auth-title">
-      Login
-    </h1>
+  <div class="auth-layout">
+    <div class="auth-intro">
+      <h1 class="auth-title">Sign in to your workspace.</h1>
+      <p class="auth-subtitle auth-subtitle--wide">
+        Access the deployment workspace without the extra marketing layer. Sign in to review status, reports and
+        application progress.
+      </p>
 
-    <p class="auth-subtitle">
-      Sign in using your email and password.
-    </p>
-
-    {% if error %}
-      <div class="error" style="margin-bottom: 1rem;">
-        {{ error }}
+      <div class="auth-visual-card auth-visual-card--compact">
+        <div class="auth-visual-window">
+          <div class="auth-visual-bar">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="auth-visual-grid">
+            <div class="auth-visual-panel auth-visual-panel--primary">
+              <strong>Customer workspace</strong>
+              <span>Status, bundles, reports</span>
+            </div>
+            <div class="auth-visual-panel">
+              <strong>Admin workspace</strong>
+              <span>Review, approvals, messages</span>
+            </div>
+          </div>
+        </div>
       </div>
-    {% endif %}
+    </div>
 
-    {% if success %}
-      <div class="notice notice--success">
-        {{ success }}
-      </div>
-    {% endif %}
+    <div class="card auth-card auth-card--elevated">
+      <h2 class="auth-card-title">Welcome back</h2>
+      <p class="auth-subtitle">Sign in with your email address and password.</p>
 
-    <form method="post" action="{{ url_for('login_submit') }}" class="auth-form">
-      <label class="auth-label">Email</label>
-      <input
-        type="email"
-        name="email"
-        required
-        autocomplete="email"
-        value="{{ email if email else '' }}"
-        style="width:100%;"
-      />
+      {% if error %}
+        <div class="error auth-feedback">
+          {{ error }}
+        </div>
+      {% endif %}
 
-      <label class="auth-label">Password</label>
-      <input
-        type="password"
-        name="password"
-        required
-        autocomplete="current-password"
-        style="width:100%;"
-      />
+      {% if success %}
+        <div class="notice notice--success auth-feedback">
+          {{ success }}
+        </div>
+      {% endif %}
 
-      <div class="auth-stack">
-        <button type="submit" class="auth-action">
-          Login
-        </button>
+      <form method="post" action="{{ url_for('login_submit') }}" class="auth-form">
+        <label class="auth-label">Email</label>
+        <input
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          value="{{ email if email else '' }}"
+        />
 
-        <a
-          href="{{ url_for('forgot_password_page') }}"
-          class="auth-action"
-        >
-          Forgot Password
-        </a>
-      </div>
-    </form>
+        <label class="auth-label">Password</label>
+        <input
+          type="password"
+          name="password"
+          required
+          autocomplete="current-password"
+        />
+
+        <div class="auth-stack">
+          <button type="submit" class="auth-action">
+            Sign in
+          </button>
+
+          <a
+            href="{{ url_for('forgot_password_page') }}"
+            class="ghost-link auth-secondary-link"
+          >
+            Forgot password
+          </a>
+        </div>
+      </form>
+    </div>
   </div>
 
 </section>

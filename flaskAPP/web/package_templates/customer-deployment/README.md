@@ -3,6 +3,8 @@ Customer Deployment Bundle
 
 This bundle contains everything needed to deploy your cost optimisation platform into your AWS account.
 
+This bundle is generated from one specific customer application. If the same customer account submits multiple applications for different AWS accounts or configurations, each application receives its own bundle and keeps its own contact and organisation snapshot.
+
 Contents
 --------
 
@@ -21,6 +23,8 @@ Deployment
 5. Future reports continue on the configured schedule
 
 The deployment creates the required resources in your AWS account.
+
+Report recipients and contact details are taken from the application that generated this bundle. Updating another application later does not overwrite this bundle's settings.
 
 Simple validation after deploy
 ------------------------------
@@ -60,6 +64,13 @@ The platform generates HTML and JSON reports and stores them in your configured 
 
 By default, Terraform also triggers one initial report immediately after `terraform apply` so customers do not need to wait for the first scheduled run.
 
+Customer and admin access
+-------------------------
+
+- Customers can download the bundle from their dashboard while the application is pending or approved.
+- Rejected applications do not expose bundle download to the customer.
+- Admins can generate and download the bundle from the admin workspace for review or support purposes.
+
 Debugging
 ---------
 
@@ -69,3 +80,5 @@ If the initial report does not appear:
 - check the report bucket in AWS S3
 - check the runner Lambda logs in CloudWatch
 - confirm the SMTP settings in `terraform/terraform.tfvars` if the report email does not arrive
+
+If Terraform is applying successfully but the first report step fails, confirm the AWS CLI is installed locally because the bundle uses `aws lambda invoke` during the initial run step.

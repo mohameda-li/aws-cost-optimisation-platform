@@ -80,6 +80,11 @@ class TestRunnerHelpers(unittest.TestCase):
         self.assertEqual("s3", result["payload"]["service"])
         self.assertEqual(0.0, result["payload"]["total_monthly_savings"])
 
+    def test_parse_body_accepts_dict_body(self):
+        payload = {"service": "s3", "total_monthly_savings": 1.25}
+        result = runner._parse_body({"statusCode": 200, "body": payload})
+        self.assertEqual(payload, result)
+
     def test_handler_builds_reports_and_s3_keys(self):
         import os
         from unittest.mock import patch
@@ -308,6 +313,30 @@ class TestRunnerHelpers(unittest.TestCase):
 
         self.assertEqual("skipped", result["status"])
 
+    def test_send_report_email_returns_error_for_invalid_smtp_port(self):
+        previous_env = {key: os.environ.get(key) for key in (
+            "SMTP_HOST",
+            "SMTP_PORT",
+            "SMTP_SENDER",
+            "NOTIFICATION_EMAIL",
+        )}
+        os.environ["SMTP_HOST"] = "email-smtp.example.com"
+        os.environ["SMTP_PORT"] = "bad-port"
+        os.environ["SMTP_SENDER"] = "reports@example.com"
+        os.environ["NOTIFICATION_EMAIL"] = "ops@example.com"
+
+        try:
+            result = runner._send_report_email({"customer": "Acme Ltd"})
+        finally:
+            for key, value in previous_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.assertEqual("error", result["status"])
+        self.assertEqual("Invalid SMTP port configuration", result["reason"])
+
     def test_build_report_links_creates_presigned_urls_for_uploaded_objects(self):
         class FakeS3Client:
             def __init__(self):
@@ -492,6 +521,67 @@ class TestReportGeneration(unittest.TestCase):
         self.assertEqual("bad", report_generator.format_timestamp("bad"))
         self.assertIn("risk-high", report_generator.risk_badge("high"))
         self.assertIn("No top actions available", report_generator.build_top_actions({"summary": {}}))
+
+    def test_generate_report_files_handles_malformed_payload_shapes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            html_path, json_path = report_generator.generate_report_files(
+                {"services": ["unexpected"], "totals": "unexpected", "summary": None},
+                Path(tmp),
+                "bad payload",
+            )
+
+            html = html_path.read_text(encoding="utf-8")
+            saved = json.loads(json_path.read_text(encoding="utf-8"))
+
+        self.assertIn("FinOps Automation Report", html)
+        self.assertIn("Top actions", html)
+        self.assertEqual(["unexpected"], saved["services"])
+
+    def test_report_helper_renderers_cover_additional_branches(self):
+        self.assertEqual("run", report_generator.sanitize_filename(""))
+        self.assertIn("risk-low", report_generator.risk_badge("low"))
+        self.assertIn("risk-medium", report_generator.risk_badge("medium"))
+        self.assertIn("risk-unknown", report_generator.risk_badge(None))
+        self.assertIn("No recommendations", report_generator.table(["A"], []))
+        self.assertIn("01 Jan 2026", report_generator.format_timestamp("2026-01-01T10:00:00+00:00"))
+
+    def test_build_top_actions_and_render_generic_with_recommendations(self):
+        top_html = report_generator.build_top_actions(
+            {
+                "summary": {
+                    "top_actions": [
+                        {
+                            "service": "s3",
+                            "resource_id": "bucket-a",
+                            "action": "move_to_ia",
+                            "risk_level": "low",
+                            "estimated_monthly_savings": 2.5,
+                        }
+                    ]
+                }
+            }
+        )
+        self.assertIn("bucket-a", top_html)
+        self.assertIn("move_to_ia", top_html)
+
+        generic_html = report_generator.render_generic(
+            {
+                "recommendations": [
+                    {
+                        "bucket": "bucket-a",
+                        "recommended_storage_class": "STANDARD_IA",
+                        "baseline_monthly_cost": 4.0,
+                        "optimised_monthly_cost": 1.5,
+                        "estimated_monthly_savings": 2.5,
+                        "risk_level": "low",
+                        "rationale": "Infrequently accessed objects can move to a cheaper storage tier.",
+                    }
+                ]
+            }
+        )
+        self.assertIn("STANDARD_IA", generic_html)
+        self.assertIn("bucket-a", generic_html)
+        self.assertIn("risk-low", generic_html)
 
 
 class TestS3LambdaBehaviour(unittest.TestCase):

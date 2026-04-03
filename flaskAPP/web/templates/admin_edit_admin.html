@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+
+<section class="shell">
+
+  <div class="section-head">
+    <div class="section-copy">
+      <div class="page-kicker">Administration</div>
+      <h1 class="page-title">Edit Admin</h1>
+    </div>
+
+    <div class="toolbar">
+      <a href="{{ url_for('admin_manage_admins') }}" class="ghost-link">
+        Back to Admins
+      </a>
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="notice notice--warning">{{ error }}</div>
+  {% endif %}
+
+  {% if success %}
+    <div class="notice notice--success">{{ success }}</div>
+  {% endif %}
+
+  <div class="card admin-form-card">
+    <div class="section-copy section-copy-tight" style="margin-bottom: 1rem;">
+      <h2 style="font-size:1.15rem;">Admin account #{{ admin_record.admin_id }}</h2>
+    </div>
+
+    <form method="post" action="{{ url_for('admin_update_admin') }}" class="admin-create-form">
+      <input type="hidden" name="admin_id" value="{{ admin_record.admin_id }}">
+
+      <div class="apply-overview-grid">
+        <div class="apply-overview-card">
+          <strong>Email</strong>
+          <span>{{ admin_record.email }}</span>
+        </div>
+        <div class="apply-overview-card">
+          <strong>Created</strong>
+          <span>{{ admin_record.created_at.strftime('%Y-%m-%d') if admin_record.created_at and admin_record.created_at.strftime is defined else admin_record.created_at or '—' }}</span>
+        </div>
+      </div>
+
+      <input
+        type="email"
+        name="email"
+        placeholder="Admin email"
+        value="{{ admin_record.email }}"
+        required
+      />
+
+      <input
+        type="password"
+        name="new_password"
+        placeholder="New password (leave blank to keep current password)"
+        minlength="8"
+      />
+
+      <input
+        type="password"
+        name="confirm_password"
+        placeholder="Confirm new password"
+        minlength="8"
+      />
+
+      <div class="action-row" style="margin-top: 1rem;">
+        <button type="submit" class="button-link button-secondary dashboard-action">
+          Save changes
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% endblock %}

@@ -42,11 +42,15 @@ Before applying, review:
 
 If these values already match your requirements, you can continue without making changes.
 
+This bundle belongs to one specific application snapshot. If you submit another application later for a different AWS account or reporting setup, it will generate a separate bundle instead of overwriting this one.
+
 After deployment
 ----------------
 
 The platform generates one initial report immediately after deployment, then continues on the configured schedule and uploads reports to S3.
 If SMTP is configured, the runner also sends a direct report notification email to the configured report recipients.
+
+If you are validating the deployment with an admin account, the admin workspace can also regenerate or download the same bundle for support and review purposes.
 
 Validation checklist
 --------------------
@@ -64,3 +68,4 @@ Notes
 
 - If the selected AWS account does not currently contain matching resources, services may return zero findings. This is expected and still confirms that the deployment is working correctly.
 - The deployment bundle already packages the pricing reference files inside the Lambda ZIPs. No extra customer-side data folder is required.
+- Customers can keep multiple applications under one account. Each application keeps its own organisation, contact, and recipient snapshot.

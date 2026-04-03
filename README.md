@@ -27,7 +27,7 @@ Start the web app and database with Docker Compose:
 docker compose up --build
 ```
 
-The web app will be available on `http://localhost:5050`.
+The web app will be available on `http://127.0.0.1:5050`.
 
 Copy [.env.example](/Users/mohamedali/Library/CloudStorage/OneDrive-UWEBristol/Year%203/DSP/FinalApp/.env.example) to `.env` if you want to override the default local Docker settings.
 
@@ -59,6 +59,8 @@ The current automated coverage includes:
 - admin approval and management route tests
 - customer bundle download route tests
 - shared helper tests for bundle and customer configuration logic
+- multi-application customer account tests
+- approval and bundle-generation rollback tests
 
 ## Main Product Flows
 
@@ -66,10 +68,13 @@ The current platform supports:
 
 - customer application submission with email verification
 - customer login and password reset with verification codes
-- customer self-service dashboard for reviewing, editing, withdrawing, and downloading approved applications
+- customer self-service dashboard for reviewing, editing, withdrawing, and creating multiple applications from one account
+- per-application snapshots for organisation name, contact name, and contact email so one application does not overwrite another
 - customer to admin conversation threads linked to each application
+- guest and customer contact flows, with guest email required before a message can be sent
 - admin review dashboard with queue views and filtered application management
-- admin application detail pages with decision controls, conversation history, and deployment bundle download
+- admin application detail pages with decision controls, direct conversation access, and deployment bundle download
+- admin contact inbox and recent customer message view
 - superuser-only admin account management
 
 ## CI
@@ -113,7 +118,10 @@ When a bundle is generated, the app:
 
 Customers do not need to zip Lambda files manually.
 
-Admins can also download the generated deployment bundle from the admin application detail page once an application has been approved.
+Bundle access rules:
+
+- admins can generate and download the deployment bundle from the admin application detail page regardless of application status
+- customers can download the bundle from their dashboard unless the application is rejected
 
 ## Generated Customer Bundle
 
@@ -134,6 +142,8 @@ terraform init
 terraform apply
 ```
 
+By default, the generated Terraform also triggers one initial report immediately after deployment.
+
 ## Reports
 
 The runner produces:
@@ -147,3 +157,5 @@ Reports are uploaded to the configured S3 bucket under:
 reports/<customer>/<run_id>.html
 reports/<customer>/<run_id>.json
 ```
+
+Report notifications are sent directly over SMTP/SES-style email using the configured SMTP values in the generated bundle.

@@ -23,27 +23,46 @@
 
       <nav class="nav-right">
         {% if session.get("user_role") == "admin" %}
-          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
-          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
-          <a href="{{ url_for('admin_dashboard') }}" class="nav-pill">Admin Dashboard</a>
+          <a href="{{ url_for('admin_dashboard') }}" class="nav-link">Dashboard</a>
+          <a href="{{ url_for('admin_applications') }}" class="nav-link">Applications</a>
+          <a href="{{ url_for('admin_contact_messages') }}" class="nav-link">Inbox</a>
+          {% if session.get("admin_is_superuser") %}
+            <a href="{{ url_for('admin_manage_admins') }}" class="nav-link">Admins</a>
+          {% endif %}
+          <details class="nav-menu">
+            <summary class="nav-pill">Site</summary>
+            <div class="nav-dropdown">
+              <a href="{{ url_for('index') }}" class="nav-dropdown-link">Home</a>
+              <a href="{{ url_for('platform') }}" class="nav-dropdown-link">Overview</a>
+              <a href="{{ url_for('security') }}" class="nav-dropdown-link">Security</a>
+            </div>
+          </details>
           <a href="{{ url_for('logout') }}" class="nav-cta">
             Logout
           </a>
 
         {% elif session.get("user_role") == "customer" %}
-          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
-          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
-          <a href="{{ url_for('onboarding') }}" class="nav-pill">Onboarding</a>
-          <a href="{{ url_for('customer_dashboard') }}" class="nav-pill">Dashboard</a>
+          <a href="{{ url_for('customer_dashboard') }}" class="nav-link">Dashboard</a>
+          <a href="{{ url_for('onboarding') }}" class="nav-link">Onboarding</a>
+          <details class="nav-menu">
+            <summary class="nav-pill">Site</summary>
+            <div class="nav-dropdown">
+              <a href="{{ url_for('index') }}" class="nav-dropdown-link">Home</a>
+              <a href="{{ url_for('platform') }}" class="nav-dropdown-link">Overview</a>
+              <a href="{{ url_for('security') }}" class="nav-dropdown-link">Security</a>
+              <a href="{{ url_for('contact') }}" class="nav-dropdown-link">Contact</a>
+            </div>
+          </details>
           <a href="{{ url_for('logout') }}" class="nav-cta">
             Logout
           </a>
 
         {% else %}
-          <a href="{{ url_for('index') }}" class="nav-pill">Home</a>
-          <a href="{{ url_for('info') }}" class="nav-pill">Information</a>
-          <a href="{{ url_for('apply_form') }}" class="nav-pill">Apply</a>
-          <a href="{{ url_for('onboarding') }}" class="nav-pill">Onboarding</a>
+          <a href="{{ url_for('platform') }}" class="nav-link">Overview</a>
+          <a href="{{ url_for('security') }}" class="nav-link">Security</a>
+          <a href="{{ url_for('onboarding') }}" class="nav-link">Onboarding</a>
+          <a href="{{ url_for('contact') }}" class="nav-link">Contact</a>
+          <a href="{{ url_for('apply_form') }}" class="nav-link">Apply</a>
           <a href="{{ url_for('login_page') }}" class="nav-cta">Login</a>
         {% endif %}
       </nav>
@@ -68,6 +87,42 @@
         Secure. Serverless. AWS-native FinOps automation.
       </p>
     </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const menus = Array.from(document.querySelectorAll(".nav-menu"));
+
+        menus.forEach((menu) => {
+          menu.addEventListener("toggle", function () {
+            if (!menu.open) {
+              return;
+            }
+
+            menus.forEach((otherMenu) => {
+              if (otherMenu !== menu) {
+                otherMenu.open = false;
+              }
+            });
+          });
+        });
+
+        document.addEventListener("click", function (event) {
+          menus.forEach((menu) => {
+            if (!menu.contains(event.target)) {
+              menu.open = false;
+            }
+          });
+        });
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            menus.forEach((menu) => {
+              menu.open = false;
+            });
+          }
+        });
+      });
+    </script>
 
   </body>
 </html>

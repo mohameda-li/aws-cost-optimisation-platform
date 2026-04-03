@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="marketing-shell">
+  <div class="marketing-grid marketing-grid--feature marketing-grid--feature-top">
+    <div class="marketing-section-intro marketing-section-intro--compact">
+      <div class="page-kicker">Platform</div>
+      <h1 class="auth-title">Built to move from onboarding to deployment without losing momentum.</h1>
+      <p class="marketing-copy marketing-copy--rich marketing-copy--lead">
+        FinOps Automation is structured as a deployable workflow, not just a static recommendations page. Customers submit
+        onboarding details, receive a tailored bundle, deploy it into AWS and then receive scheduled optimisation outputs
+        through one repeatable operating model.
+      </p>
+      <div class="marketing-chip-row marketing-section-intro--top">
+        <span class="marketing-chip">Customer-owned AWS deployment</span>
+        <span class="marketing-chip">Scheduled reporting</span>
+        <span class="marketing-chip">Multi-service optimisation</span>
+      </div>
+    </div>
+
+    <div class="marketing-media">
+      <div class="marketing-showcase marketing-showcase--platform">
+        <div class="marketing-showcase-window">
+          <div class="marketing-showcase-bar">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="marketing-showcase-grid">
+            <div class="marketing-showcase-panel marketing-showcase-panel--hero">
+              <strong>Deployment bundle ready</strong>
+              <span>Terraform, runner Lambda, enabled optimisers, reporting config</span>
+            </div>
+            <div class="marketing-showcase-stack">
+              <div class="marketing-showcase-mini">
+                <label>Onboarding</label>
+                <span>Region, services, report recipients</span>
+              </div>
+              <div class="marketing-showcase-mini">
+                <label>Execution</label>
+                <span>Runner orchestrates S3, RDS, ECS, EKS and Spot</span>
+              </div>
+              <div class="marketing-showcase-mini">
+                <label>Reporting</label>
+                <span>HTML, JSON, S3 upload, email delivery</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marketing-grid marketing-grid--split">
+    <div class="card marketing-card marketing-card--wide">
+      <div class="marketing-card-head">
+        <h3>Deployment workflow</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Approved customers receive a Terraform bundle containing the runner Lambda, enabled optimiser Lambdas, IAM policy,
+        EventBridge schedule and reporting configuration. The generated package reflects the selected region, services,
+        report frequency and delivery settings already stored during onboarding.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>What the customer actually gets</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        A direct deployment path, a report bucket, automated execution and email notifications without requiring ongoing
+        manual analysis by the platform operator.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>Why this feels operational</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        A first report can run immediately after deployment, then continue through EventBridge scheduling. That gives the
+        customer something actionable from day one rather than waiting for a later manual setup step.
+      </p>
+    </div>
+  </div>
+
+  <div class="marketing-grid marketing-grid--three">
+    <div class="card marketing-card">
+      <h3>Supported AWS services</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        The current platform supports Amazon S3, Amazon RDS, Amazon ECS, Amazon EKS and EC2 Spot opportunity analysis.
+      </p>
+    </div>
+    <div class="card marketing-card">
+      <h3>Consistent report structure</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Each optimiser follows the same reporting shape so cost baselines, recommendations and savings can be reviewed in
+        one consolidated output.
+      </p>
+    </div>
+    <div class="card marketing-card">
+      <h3>Designed for maintainability</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Onboarding, deployment, optimisation and reporting are separated cleanly so the system can evolve without turning
+        into one tightly coupled Lambda package.
+      </p>
+    </div>
+  </div>
+
+  <div class="marketing-section-intro marketing-section-intro--top marketing-section-intro--compact">
+    <h2>Why this problem grows quietly</h2>
+    <p class="marketing-copy marketing-copy--rich marketing-copy--lead">
+      Cloud usage expands through retained data, oversized compute and always-on workloads. Costs usually drift before they
+      fail, which is why regular optimisation review matters.
+    </p>
+  </div>
+
+  <div class="card marketing-card">
+    <div class="marketing-grid marketing-grid--split">
+      <div class="marketing-media">
+        <img
+          src="{{ url_for('static', filename='images/barchart.png') }}"
+          alt="Global data generated annually (Zettabytes)"
+          class="marketing-media-card marketing-media-card--chart"
+        />
+      </div>
+
+      <div class="marketing-media-copy">
+        <h3>Why keep the graph here</h3>
+        <p>
+          Global data growth helps explain why storage and supporting services become more expensive over time. In practice,
+          that shows up as retained objects, overprovisioned databases, oversized container platforms and missed Spot
+          opportunities.
+        </p>
+        <p class="marketing-caption">
+          Source: “Amount of Data Created Daily” (2025), IDC / Global Datasphere (summary figure).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="marketing-section-intro marketing-section-intro--top marketing-section-intro--compact">
+    <h2>Covered services</h2>
+    <p class="marketing-copy marketing-copy--rich marketing-copy--lead">
+      The platform currently scans five AWS services and returns recommendations in one consistent reporting structure.
+    </p>
+  </div>
+
+  <div class="marketing-grid marketing-grid--two">
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
+        <img
+          src="{{ url_for('static', filename='images/s3.png') }}"
+          alt="S3"
+          class="marketing-icon marketing-icon--sm"
+        />
+        <h3>Amazon S3</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Inactivity, storage-class opportunities and retained data that may be costing money without ongoing value.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
+        <img
+          src="{{ url_for('static', filename='images/rds.png') }}"
+          alt="RDS"
+          class="marketing-icon marketing-icon--sm"
+        />
+        <h3>Amazon RDS</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Managed database overprovisioning and rightsizing opportunities where performance risk appears low.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
+        <img
+          src="{{ url_for('static', filename='images/ecs.png') }}"
+          alt="ECS"
+          class="marketing-icon marketing-icon--sm"
+        />
+        <h3>Amazon ECS</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Low-utilisation container services and oversized CPU or memory reservations that create wasted capacity.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <div class="marketing-card-head">
+        <img
+          src="{{ url_for('static', filename='images/eks.png') }}"
+          alt="EKS"
+          class="marketing-icon marketing-icon--sm"
+        />
+        <h3>Amazon EKS</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Cluster capacity drift, nodegroup sizing signals and opportunities to reduce overprovisioned compute.
+      </p>
+    </div>
+
+    <div class="card marketing-card marketing-card--wide">
+      <div class="marketing-card-head">
+        <img
+          src="{{ url_for('static', filename='images/spot.png') }}"
+          alt="EC2 Spot"
+          class="marketing-icon marketing-icon--sm"
+        />
+        <h3>EC2 Spot Instances</h3>
+      </div>
+      <p class="marketing-copy marketing-copy--rich">
+        Interruption-tolerant workloads that may be suitable for lower-cost Spot capacity instead of full on-demand pricing.
+      </p>
+    </div>
+  </div>
+
+  <div class="marketing-actions marketing-actions--top">
+    <a href="{{ url_for('apply_form') }}" class="marketing-action-link">
+      Apply for access
+    </a>
+    <a href="{{ url_for('security') }}" class="marketing-action-link">
+      Security and deployment model
+    </a>
+    <a href="{{ url_for('contact') }}" class="marketing-action-link">
+      Contact us
+    </a>
+  </div>
+</section>
+
+{% endblock %}

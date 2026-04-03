@@ -32,7 +32,7 @@ class TestConfig(unittest.TestCase):
         config = AppConfig(
             app_env="production",
             secret_key="dev-secret-change-later",
-            app_base_url="http://localhost:5050",
+            app_base_url="http://127.0.0.1:5050",
             smtp_host="",
             smtp_port=587,
             smtp_username="",

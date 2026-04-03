@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS customer_users (
 CREATE TABLE IF NOT EXISTS applications (
   application_id INT AUTO_INCREMENT PRIMARY KEY,
   customer_user_id INT NOT NULL,
+  organisation_name VARCHAR(255) NULL,
+  contact_name VARCHAR(255) NULL,
+  contact_email VARCHAR(255) NULL,
   notes TEXT NULL,
   status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -100,6 +103,18 @@ CREATE TABLE IF NOT EXISTS application_messages (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS application_message_state (
+  application_id INT PRIMARY KEY,
+  customer_last_read_admin_message_id INT NOT NULL DEFAULT 0,
+  customer_last_notified_admin_message_id INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_application_message_state_application
+    FOREIGN KEY (application_id) REFERENCES applications(application_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE IF NOT EXISTS admins (
   admin_id INT AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(255) NOT NULL,
@@ -108,4 +123,18 @@ CREATE TABLE IF NOT EXISTS admins (
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   is_superuser TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  contact_message_id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_user_id INT NULL,
+  sender_mode ENUM('guest','customer') NOT NULL,
+  sender_name VARCHAR(255) NULL,
+  sender_email VARCHAR(255) NOT NULL,
+  message_body TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_contact_messages_customer
+    FOREIGN KEY (customer_user_id) REFERENCES customer_users(customer_user_id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

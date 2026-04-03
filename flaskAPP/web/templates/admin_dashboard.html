@@ -9,7 +9,6 @@
     <div class="section-copy">
       <div class="page-kicker">Administration</div>
       <h1 class="page-title">Admin Dashboard</h1>
-      <p class="page-subtitle">Keep the review queue moving, check the latest submissions and jump straight into application decisions.</p>
       {% if session.get("admin_is_superuser") %}
         <p style="margin:0.85rem 0 0; color:rgba(232,237,245,0.58); font-size:0.92rem;">
           {{ admins }} admin accounts · {{ onboardings }} completed onboardings
@@ -21,6 +20,9 @@
       {% if session.get("admin_id") %}
         <a href="{{ url_for('admin_applications') }}" class="ghost-link">
           Manage Applications
+        </a>
+        <a href="{{ url_for('admin_contact_messages') }}" class="ghost-link">
+          Contact Inbox
         </a>
 
         {% if session.get("admin_is_superuser") %}
@@ -45,17 +47,18 @@
       <div class="metric-label">Rejected</div>
       <div class="metric-value">{{ rejected_count }}</div>
     </div>
+    <div class="metric-card">
+      <div class="metric-label">Contact messages</div>
+      <div class="metric-value">{{ contact_messages_count }}</div>
+    </div>
   </div>
 
   <div style="display:grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr); gap: 1rem; margin-top: 1rem;">
     <div class="card" style="padding: 1.5rem; border-radius: 18px;">
       <div style="display:flex; justify-content:space-between; gap:1rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1rem;">
-        <div>
-          <h2 style="margin:0; font-size:1.2rem;">Review queue</h2>
-          <p style="margin:0.35rem 0 0; color:rgba(232,237,245,0.68);">
-            Pending applications that still need an admin decision.
-          </p>
-        </div>
+      <div>
+        <h2 style="margin:0; font-size:1.2rem;">Review queue</h2>
+      </div>
         {% if pending_count %}
           <div style="color:rgba(232,237,245,0.62); font-size:0.92rem;">
             {{ pending_count }} awaiting review
@@ -66,7 +69,10 @@
       {% if pending_apps %}
         <div style="display:grid; gap:0.8rem;">
           {% for app_row in pending_apps %}
-            <div style="padding:1rem 1.05rem; border-radius:16px; background:linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.06);">
+            <a
+              href="{{ url_for('admin_application_detail', application_id=app_row.application_id) }}"
+              class="review-queue-link"
+            >
               <div>
                 <div style="display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; flex-wrap:wrap;">
                   <div style="font-weight:700; font-size:1rem;">{{ app_row.organisation_name }}</div>
@@ -84,7 +90,7 @@
                   {% endif %}
                 </div>
               </div>
-            </div>
+            </a>
           {% endfor %}
         </div>
         <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
@@ -100,58 +106,94 @@
     <div class="card" style="padding: 1.5rem; border-radius: 18px;">
     <div style="display:flex; justify-content:space-between; gap:1rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1rem;">
       <div>
-        <h2 style="margin:0; font-size:1.2rem;">Latest applications</h2>
-        <p style="margin:0.35rem 0 0; color:rgba(232,237,245,0.68);">
-          Most recent customer submissions across the platform.
-        </p>
-      </div>
-      <div style="color:rgba(232,237,245,0.62); font-size:0.92rem;">
-        Total applications: {{ applications }}
+        <h2 style="margin:0; font-size:1.2rem;">Recent messages</h2>
       </div>
     </div>
 
-    {% if apps %}
-      <div class="table-shell" style="overflow-x:auto;">
-        <table class="table-modern">
-          <thead>
-            <tr>
-              <th>Application</th>
-              <th>Company</th>
-              <th>Contact</th>
-              <th>Status</th>
-              <th>Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for app_row in apps[:5] %}
-              <tr>
-                <td>#{{ app_row.application_id }}</td>
-                <td>{{ app_row.organisation_name }}</td>
-                <td>
-                  {{ app_row.contact_name }}
-                  <div style="margin-top:0.25rem; color:rgba(232,237,245,0.58); font-size:0.9rem;">{{ app_row.contact_email }}</div>
-                </td>
-                <td>
-                  <span class="status-badge status-{{ app_row.status }}">
-                    {{ app_row.status|capitalize }}
+    {% if recent_messages %}
+      <div class="review-list">
+        {% for message in recent_messages %}
+          <a
+            href="{{ url_for('admin_application_messages', application_id=message.application_id) }}"
+            class="card review-list-item"
+            style="text-decoration:none; color:inherit;"
+          >
+            <div class="review-list-main">
+              <div class="review-list-title-row">
+                <div>
+                  <h3 class="review-list-title" style="font-size:1rem;">
+                    {{ message.organisation_name }}
+                  </h3>
+                  <div class="review-list-meta">
+                    Application #{{ message.application_id }} · {{ message.contact_name }} · {{ message.contact_email }}
+                  </div>
+                </div>
+                <span class="status-badge status-pending">
+                  Customer
+                </span>
+              </div>
+              <div class="review-list-submeta">
+                {{ message.message_body[:140] }}{% if message.message_body|length > 140 %}...{% endif %}
+              </div>
+              <div class="review-list-facts">
+                <span>Open conversation</span>
+                {% if message.created_at %}
+                  <span>
+                    {{ message.created_at.strftime("%Y-%m-%d %H:%M") if message.created_at.strftime is defined else message.created_at }}
                   </span>
-                </td>
-                <td>
-                  {% if app_row.created_at %}
-                    {{ app_row.created_at.strftime("%Y-%m-%d %H:%M") if app_row.created_at.strftime is defined else app_row.created_at }}
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
       </div>
     {% else %}
-      <p class="subtle-empty">No applications submitted yet.</p>
+      <p class="subtle-empty">No application messages yet.</p>
     {% endif %}
     </div>
+  </div>
+
+  <div class="card" style="padding: 1.5rem; border-radius: 18px;">
+    <div style="display:flex; justify-content:space-between; gap:1rem; align-items:flex-end; flex-wrap:wrap; margin-bottom:1rem;">
+      <div>
+        <h2 style="margin:0; font-size:1.2rem;">Website contact inbox</h2>
+      </div>
+      <a href="{{ url_for('admin_contact_messages') }}" class="ghost-link">
+        Open inbox
+      </a>
+    </div>
+
+    {% if contact_preview %}
+      <div class="review-list">
+        {% for message in contact_preview %}
+          <article class="card review-list-item" style="margin:0;">
+            <div class="review-list-main">
+              <div class="review-list-title-row">
+                <div>
+                  <h3 class="review-list-title" style="font-size:1rem;">
+                    {{ message.sender_name or 'Guest visitor' }}
+                  </h3>
+                  <div class="review-list-meta">
+                    {{ message.sender_email }}
+                    {% if message.organisation_name %}
+                      · {{ message.organisation_name }}
+                    {% endif %}
+                  </div>
+                </div>
+                <span class="status-badge status-approved">
+                  {{ message.sender_mode|capitalize }}
+                </span>
+              </div>
+              <div class="review-list-submeta">
+                {{ message.message_body[:160] }}{% if message.message_body|length > 160 %}...{% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtle-empty" style="margin:0;">No website contact messages yet.</p>
+    {% endif %}
   </div>
 
 </section>

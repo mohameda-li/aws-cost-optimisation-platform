@@ -117,11 +117,11 @@
     <h1>Onboarding: Customer deployment bundle</h1>
 
     <div class="callout" style="margin-top:.75rem;">
-      <b>How this works</b>
+      <b>In short</b>
       <div class="kv">
-        <div><span>•</span> Once your application is approved, you download a ready-made deployment bundle.</div>
-        <div><span>•</span> You deploy it into your own AWS account using Terraform.</div>
-        <div><span>•</span> After that, the platform runs automatically on the schedule you chose and saves reports to your S3 bucket.</div>
+        <div><span>•</span> You complete one application form with your AWS region, report schedule and chosen services.</div>
+        <div><span>•</span> Once approved, you download a ready-made deployment bundle for your AWS account.</div>
+        <div><span>•</span> After deployment, reports run automatically and are saved in your S3 bucket.</div>
       </div>
     </div>
 
@@ -134,54 +134,54 @@
     </div>
 
     <p class="onb-muted">
-      This page shows the customer deployment process and what is included in your generated bundle.
+      This page explains what you need to do, what gets deployed in your AWS account and what you receive after each run.
     </p>
   </div>
 
   <div class="stepbox">
-    <h2>Deployment steps</h2>
+    <h2>What you do</h2>
     <p class="onb-muted" style="margin:0;">
-      Expected time: around 10 to 20 minutes if you already have AWS access to deploy the required resources.
+      Expected time: around 10 to 20 minutes if you already have AWS access for Terraform deployment.
     </p>
 
     <ul class="steps">
       <li class="step">
         <div class="stepnum">1</div>
         <div>
-          <p>Complete your application and onboarding details.</p>
-          <small>You choose your AWS region, reporting schedule and the services you want the platform to check.</small>
+          <p>Complete the onboarding form.</p>
+          <small>Choose your AWS region, report frequency and the AWS services you want the platform to review.</small>
         </div>
       </li>
 
       <li class="step">
         <div class="stepnum">2</div>
         <div>
-          <p>Download your generated customer deployment bundle.</p>
-          <small>The bundle includes everything you need to deploy the platform in your AWS account.</small>
+          <p>Download your deployment bundle after approval.</p>
+          <small>The ZIP already contains your Terraform files, selected Lambda packages and customer configuration.</small>
         </div>
       </li>
 
       <li class="step">
         <div class="stepnum">3</div>
         <div>
-          <p>Check the configuration files.</p>
-          <small>Make sure the AWS region, schedule, report bucket and selected services are correct before you deploy.</small>
+          <p>Quickly review the settings.</p>
+          <small>Check the AWS region, schedule, report bucket and selected services before running Terraform.</small>
         </div>
       </li>
 
       <li class="step">
         <div class="stepnum">4</div>
         <div>
-          <p>Deploy the stack with Terraform.</p>
-          <small>Terraform creates the Lambdas, IAM role, schedule, log groups and report bucket in your account.</small>
+          <p>Deploy into your AWS account with Terraform.</p>
+          <small>Terraform creates the runner, enabled optimisers, IAM permissions, schedule, logs and report bucket.</small>
         </div>
       </li>
 
       <li class="step">
         <div class="stepnum">5</div>
         <div>
-          <p>Let the platform run automatically.</p>
-          <small>Each scheduled run checks your selected services, estimates savings and uploads reports to your S3 bucket under <code>reports/&lt;customer&gt;/&lt;run_id&gt;</code>.</small>
+          <p>Receive scheduled reports automatically.</p>
+          <small>Each run checks your selected services, estimates possible savings and uploads HTML and JSON reports to <code>reports/&lt;customer&gt;/&lt;run_id&gt;</code>.</small>
         </div>
       </li>
     </ul>
@@ -189,25 +189,25 @@
 
   <div class="onb-grid">
     <div class="info-card">
-      <h2>What gets deployed</h2>
+      <h2>What Terraform creates</h2>
       <ul class="info-list">
-        <li>One runner Lambda that coordinates the checks</li>
-        <li>Only the optimiser Lambdas you selected during onboarding</li>
-        <li>IAM execution role and permissions</li>
-        <li>CloudWatch log groups</li>
-        <li>EventBridge schedule</li>
-        <li>S3 bucket for saved reports</li>
+        <li>One runner Lambda that manages each scheduled report run</li>
+        <li>Only the optimiser Lambdas you selected in the form</li>
+        <li>An IAM role with the permissions needed to collect findings</li>
+        <li>CloudWatch logs for troubleshooting</li>
+        <li>An EventBridge schedule for automatic execution</li>
+        <li>An S3 bucket where reports are stored</li>
       </ul>
     </div>
 
     <div class="info-card">
-      <h2>Supported optimisation engines</h2>
+      <h2>Services you can include</h2>
       <div class="service-grid">
         <div class="service-item">
           <img src="{{ url_for('static', filename='images/s3.png') }}" alt="S3">
           <div>
             <b>Amazon S3</b>
-            <span>Checks for cheaper storage options for data that is accessed less often.</span>
+            <span>Looks for data that could move to a lower-cost storage class.</span>
           </div>
         </div>
 
@@ -215,7 +215,7 @@
           <img src="{{ url_for('static', filename='images/rds.png') }}" alt="RDS">
           <div>
             <b>Amazon RDS</b>
-            <span>Looks for database instances that may be larger than they need to be.</span>
+            <span>Checks whether database instances appear larger than necessary.</span>
           </div>
         </div>
 
@@ -223,7 +223,7 @@
           <img src="{{ url_for('static', filename='images/ecs.png') }}" alt="ECS">
           <div>
             <b>Amazon ECS</b>
-            <span>Finds container services that may be using more capacity than needed.</span>
+            <span>Reviews container services for potential over-provisioning.</span>
           </div>
         </div>
 
@@ -231,7 +231,7 @@
           <img src="{{ url_for('static', filename='images/eks.png') }}" alt="EKS">
           <div>
             <b>Amazon EKS</b>
-            <span>Checks whether Kubernetes node capacity can be reduced safely.</span>
+            <span>Checks whether Kubernetes node capacity may be reduced safely.</span>
           </div>
         </div>
 
@@ -250,10 +250,10 @@
     <div class="info-card">
       <h2>What is in your download</h2>
       <ul class="info-list">
-        <li>Terraform files to deploy the platform</li>
-        <li>The runner and selected optimiser packages</li>
-        <li>Your customer configuration</li>
-        <li>Simple deployment and troubleshooting guides</li>
+        <li>Terraform files ready to deploy</li>
+        <li>The runner package and only the optimisers you selected</li>
+        <li>Your customer configuration values</li>
+        <li>Deployment and troubleshooting guides written for customers</li>
       </ul>
     </div>
 
@@ -264,28 +264,28 @@ terraform init
 terraform apply</div>
 
       <p class="onb-muted" style="margin-top:.75rem;">
-        Replace <code>&lt;downloaded-bundle&gt;</code> with the folder you extracted from the downloaded ZIP, for example <code>org_7-deployment</code>. Your main settings are already filled in for you, so in most cases you only need to review them and deploy.
+        Replace <code>&lt;downloaded-bundle&gt;</code> with the folder created when you extract the ZIP, for example <code>org_7-deployment</code>. In most cases, your main values are already filled in for you.
       </p>
     </div>
   </div>
 
   <div class="info-card">
-    <h2>Runner workflow</h2>
+    <h2>What happens after deployment</h2>
     <ul class="info-list">
-      <li>EventBridge starts the runner Lambda on your chosen schedule.</li>
+      <li>EventBridge starts the runner on your chosen schedule.</li>
       <li>The runner checks which services are enabled for your account.</li>
-      <li>Each selected optimiser analyses its service and estimates possible savings.</li>
-      <li>The runner combines the results into one report.</li>
-      <li>Reports are uploaded to S3 as HTML and JSON files.</li>
+      <li>Each selected optimiser analyses its own AWS service.</li>
+      <li>The runner combines those results into one report.</li>
+      <li>The report is uploaded to S3 as both HTML and JSON.</li>
     </ul>
   </div>
 
   <div class="callout">
-    <b>Report output</b>
+    <b>What you receive</b>
     <div class="kv">
-      <div><span>•</span> An HTML report that is easy to read.</div>
-      <div><span>•</span> A JSON report for automation or further analysis.</div>
-      <div><span>•</span> Both are stored in S3 under <code>reports/&lt;customer&gt;/&lt;run_id&gt;.html</code> and <code>reports/&lt;customer&gt;/&lt;run_id&gt;.json</code>.</div>
+      <div><span>•</span> An HTML report that is easy to read and share.</div>
+      <div><span>•</span> A JSON export if you want to reuse the data elsewhere.</div>
+      <div><span>•</span> Both files are stored in S3 under <code>reports/&lt;customer&gt;/&lt;run_id&gt;.html</code> and <code>reports/&lt;customer&gt;/&lt;run_id&gt;.json</code>.</div>
     </div>
   </div>
 </div>

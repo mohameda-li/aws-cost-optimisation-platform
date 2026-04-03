@@ -7,34 +7,37 @@
     <div class="section-copy">
       <div class="page-kicker">Application Review</div>
       <h1 class="page-title">{{ application.organisation_name }}</h1>
-      <p class="page-subtitle">Review the customer details, update the decision, download the deployment bundle when approved, and keep the application conversation in one place.</p>
     </div>
     <a href="{{ back_url }}" class="ghost-link">Back to applications</a>
   </div>
 
-  <div class="panel-grid" style="margin-bottom: 1rem;">
+  <div class="panel-grid panel-grid--compact">
     <div class="panel">
-      <h3>Application</h3>
-      <p>#{{ application.application_id }} · {{ application.status|capitalize }}</p>
-      <p style="margin-top:0.35rem;">Submitted {{ application.created_at.strftime("%Y-%m-%d %H:%M") if application.created_at and application.created_at.strftime is defined else application.created_at or '—' }}</p>
+      <div class="panel-copy-tight">
+        <h3>Application</h3>
+        <p>#{{ application.application_id }} · {{ application.status|capitalize }}</p>
+        <p>Submitted {{ application.created_at.strftime("%Y-%m-%d %H:%M") if application.created_at and application.created_at.strftime is defined else application.created_at or '—' }}</p>
+      </div>
     </div>
     <div class="panel">
-      <h3>Contact</h3>
-      <p>{{ application.contact_name }} · {{ application.contact_email }}</p>
-      <p style="margin-top:0.35rem;">{{ application.organisation_name }}</p>
+      <div class="panel-copy-tight">
+        <h3>Contact</h3>
+        <p>{{ application.contact_name }} · {{ application.contact_email }}</p>
+        <p>{{ application.organisation_name }}</p>
+      </div>
     </div>
   </div>
 
-  <div class="data-grid" style="margin-bottom: 1rem;">
-    <div class="card" style="padding: 1.35rem;">
+  <div class="data-grid detail-grid-gap">
+    <div class="card detail-card">
       <div class="data-label">AWS Region</div>
       <div>{{ application.aws_region or 'Not set' }}</div>
     </div>
-    <div class="card" style="padding: 1.35rem;">
+    <div class="card detail-card">
       <div class="data-label">Report Frequency</div>
       <div>{{ application.report_frequency or 'Not set' }}</div>
     </div>
-    <div class="card" style="padding: 1.35rem;">
+    <div class="card detail-card">
       <div class="data-label">Enabled Services</div>
       {% if application.services %}
         <div class="chip-list">
@@ -46,10 +49,10 @@
         <div>No services configured.</div>
       {% endif %}
     </div>
-    <div class="card" style="padding: 1.35rem;">
+    <div class="card detail-card">
       <div class="data-label">Report Recipients</div>
       {% if application.report_recipients %}
-        <div style="display:grid; gap:0.35rem;">
+        <div class="recipient-stack">
           {% for recipient in application.report_recipients %}
             <div>{{ recipient.report_email }}</div>
           {% endfor %}
@@ -60,88 +63,49 @@
     </div>
   </div>
 
-  <div class="card" style="padding: 1.35rem; margin-bottom: 1rem;">
+  <div class="card detail-card detail-card--spaced">
     <div class="data-label">Notes</div>
     <div>{{ application.notes or 'No notes provided.' }}</div>
   </div>
 
-  <div class="card" style="padding: 1.35rem; margin-bottom: 1rem;">
-    <div class="section-copy" style="margin-bottom: 1rem;">
-      <h2 style="margin:0 0 0.35rem; font-size:1.2rem;">Decision and deployment</h2>
-      <p class="page-subtitle" style="margin:0;">Update the status here. Approved applications can also be downloaded directly by the admin team.</p>
+  <div class="card detail-card detail-card--spaced">
+    <div class="section-copy section-copy-tight" style="margin-bottom: 1rem;">
+      <h2 style="font-size:1.2rem;">Decision and deployment</h2>
     </div>
-    <div class="action-row" style="justify-content:space-between; align-items:flex-end;">
-      <form method="post" action="{{ url_for('admin_update_status') }}" class="inline-form">
+    <div class="detail-action-grid">
+      <form method="post" action="{{ url_for('admin_update_status') }}" class="detail-action-card">
         <input type="hidden" name="application_id" value="{{ application.application_id }}">
         <input type="hidden" name="return_query" value="{{ return_query }}">
         <input type="hidden" name="return_to" value="detail">
-        <div>
-          <label for="status-{{ application.application_id }}" class="data-label" style="margin-bottom:0.35rem;">Update status</label>
-          <select id="status-{{ application.application_id }}" name="status" style="min-width: 200px;">
-            <option value="pending" {% if application.status == 'pending' %}selected{% endif %}>Pending</option>
-            <option value="approved" {% if application.status == 'approved' %}selected{% endif %}>Approved</option>
-            <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %}>Rejected</option>
-          </select>
-        </div>
-        <button type="submit">Save decision</button>
+        <label for="status-{{ application.application_id }}" class="data-label">Update status</label>
+        <select id="status-{{ application.application_id }}" name="status" class="decision-select">
+          <option value="pending" {% if application.status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if application.status == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button type="submit" class="ghost-link dashboard-action">Save decision</button>
       </form>
-      {% if application.status == 'approved' %}
-        <a href="{{ url_for('admin_download_bundle', application_id=application.application_id) }}" class="button-link button-secondary">
+      <div class="detail-action-card">
+        <div class="data-label">Conversation</div>
+        <a
+          href="{{ url_for('admin_application_messages', application_id=application.application_id, return_query=return_query, return_to='detail') }}"
+          class="ghost-link dashboard-action"
+        >
+          Open conversation
+        </a>
+        {% if application.needs_admin_reply %}
+          <div>
+            <span class="message-alert message-alert--waiting">New message</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="detail-action-card">
+        <div class="data-label">Bundle</div>
+        <a href="{{ url_for('admin_download_bundle', application_id=application.application_id) }}" class="ghost-link dashboard-action">
           Download deployment bundle
         </a>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="card" style="padding: 1.5rem;">
-    <div class="section-copy" style="margin-bottom: 1rem;">
-      <h2 style="margin:0 0 0.35rem; font-size:1.25rem;">Conversation</h2>
-      <p class="page-subtitle" style="margin:0;">Messages in this thread are visible to the customer and all admin accounts.</p>
-      {% if application.needs_admin_reply %}
-        <div style="margin-top:0.8rem;">
-          <span class="message-alert">Customer replied. A response is waiting.</span>
-        </div>
-      {% endif %}
-    </div>
-
-    {% if application.messages %}
-      <div class="message-thread">
-        {% for message in application.messages %}
-          <article class="message-card {% if message.sender_role == 'admin' %}message-card--admin{% else %}message-card--customer{% endif %}">
-            <div class="message-meta">
-              <strong>{{ message.sender_name }}</strong>
-              <span>{{ message.sender_role|capitalize }}</span>
-              <span>
-                {% if message.created_at %}
-                  {{ message.created_at.strftime("%Y-%m-%d %H:%M") if message.created_at.strftime is defined else message.created_at }}
-                {% else %}
-                  —
-                {% endif %}
-              </span>
-            </div>
-            <div class="message-body">{{ message.message_body }}</div>
-          </article>
-        {% endfor %}
       </div>
-    {% else %}
-      <div class="notice notice--info">No messages yet. Start the conversation below.</div>
-    {% endif %}
-
-    <form method="post" action="{{ url_for('admin_post_application_message', application_id=application.application_id, return_query=return_query, return_to='detail') }}" class="message-form">
-      <label class="label" for="message_body">New message</label>
-      <textarea
-        class="input textarea"
-        id="message_body"
-        name="message_body"
-        rows="5"
-        maxlength="3000"
-        placeholder="Write your message here"
-        required
-      ></textarea>
-      <div class="action-row" style="margin-top: 1rem;">
-        <button type="submit">Send message</button>
-      </div>
-    </form>
+    </div>
   </div>
 </section>
 {% endblock %}

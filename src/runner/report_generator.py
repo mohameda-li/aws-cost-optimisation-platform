@@ -386,8 +386,9 @@ def render_generic(service_payload):
 
 
 def build_html(payload: Dict[str, Any]) -> str:
-    totals = payload.get("totals", {}) or {}
-    services = payload.get("services", {}) or {}
+    payload = payload if isinstance(payload, dict) else {}
+    totals = payload.get("totals", {}) if isinstance(payload.get("totals"), dict) else {}
+    services = payload.get("services", {}) if isinstance(payload.get("services"), dict) else {}
     ts = format_timestamp(payload.get("timestamp") or "")
     run_id = payload.get("run_id") or ""
     customer = payload.get("customer") or "unknown"
@@ -467,6 +468,7 @@ def build_html(payload: Dict[str, Any]) -> str:
 
 def generate_report_files(payload: Dict[str, Any], output_dir: Path, filename_prefix: str) -> Tuple[Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
+    payload = payload if isinstance(payload, dict) else {}
 
     safe_prefix = sanitize_filename(filename_prefix)
     html_path = output_dir / f"{safe_prefix}.html"

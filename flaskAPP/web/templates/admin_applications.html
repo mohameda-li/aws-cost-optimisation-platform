@@ -8,7 +8,6 @@
     <div class="section-copy">
       <div class="page-kicker">Administration</div>
       <h1 class="page-title">Applications</h1>
-      <p class="page-subtitle">Review the queue, narrow the list quickly, and open an application when you need the full context.</p>
     </div>
 
     <a href="{{ url_for('admin_dashboard') }}" class="ghost-link">
@@ -86,9 +85,6 @@
       <div class="review-toolbar-footer">
         <div class="review-result-meta">
           Showing {{ applications|length }} of {{ total_applications }} applications
-          {% if has_filters %}
-            <span class="review-filter-state">filtered</span>
-          {% endif %}
         </div>
         <div class="action-row review-toolbar-actions">
           <a href="{{ url_for('admin_applications') }}" class="ghost-link review-reset-link">Reset</a>
@@ -134,10 +130,7 @@
             <div class="review-list-facts">
               <span>AWS region: {{ a.aws_region or 'Not set' }}</span>
               <span>Report frequency: {{ a.report_frequency or 'Not set' }}</span>
-              <span>Messages: {{ a.message_count }}</span>
-              {% if a.needs_admin_reply %}
-                <span class="message-alert">Customer replied</span>
-              {% endif %}
+              <span>Conversation: {{ a.message_count }}{% if a.needs_admin_reply %} · 1 new message{% endif %}</span>
             </div>
 
             {% if a.services %}
@@ -150,7 +143,7 @@
           </div>
 
           <div class="review-list-actions">
-            <a href="{{ url_for('admin_application_detail', application_id=a.application_id, return_query=return_query) }}" class="button-link button-secondary">
+            <a href="{{ url_for('admin_application_detail', application_id=a.application_id, return_query=return_query) }}" class="button-link button-secondary dashboard-action">
               Open application
             </a>
           </div>

@@ -2,18 +2,17 @@
 
 {% block content %}
 
-<section class="hero">
+<section class="hero hero--compact">
   <h1>
-    Turn <span class="highlight">idle AWS storage</span><br>
-    into measurable cost control
+    Turn AWS waste into<br>
+    <span class="highlight">clear, scheduled savings insight</span>
   </h1>
 
   <div class="hero-layout">
     <p class="hero-context hero-copy">
-      As cloud usage expands across teams and services, cost management becomes a moving target.
-      Storage, in particular, grows quietly as logs, backups and historical data accumulate,
-      long after their operational value has faded. Without continuous visibility, organisations
-      continue paying for data that delivers little or no ongoing benefit.
+      FinOps Automation helps teams identify avoidable AWS spend without moving infrastructure analysis
+      outside the customer account. Customers apply, deploy a generated bundle into AWS and receive
+      scheduled optimisation reports covering the services that matter most.
     </p>
 
     <img
@@ -25,202 +24,57 @@
 
   <div class="stats">
     <div class="stat">
-      <span class="stat-number">30 to 60%</span>
-      <span class="stat-label">of stored data is typically inactive after 90 days</span>
+      <span class="stat-number">5</span>
+      <span class="stat-label">AWS services covered in the current platform</span>
     </div>
     <div class="stat">
-      <span class="stat-number">£15 to £40</span>
-      <span class="stat-label">potential monthly saving per inactive bucket</span>
+      <span class="stat-number">HTML + JSON</span>
+      <span class="stat-label">report outputs delivered after each successful run</span>
     </div>
     <div class="stat">
-      <span class="stat-number">&lt; 1 min</span>
-      <span class="stat-label">analysis runtime per AWS account</span>
+      <span class="stat-number">AWS-native</span>
+      <span class="stat-label">deployment using Lambda, EventBridge, S3 and Terraform</span>
     </div>
   </div>
 
   <div class="trust-bar">
-    No credentials stored, read only cross account access, serverless AWS native execution.
+    Customer-owned deployment, scheduled reports, AWS-native execution.
   </div>
-  <div class="marketing-grid marketing-grid--feature">
-
-  <div class="marketing-media">
-    <img
-      src="{{ url_for('static', filename='images/cloudop.png') }}"
-      alt="Benefits of cloud optimisation"
-      class="marketing-media-card"
-    />
-  </div>
-
-  <div class="marketing-media-copy">
-    <h3>Why cloud optimisation matters</h3>
-    <p>
-      Cloud waste is rarely a single big mistake — it’s the accumulation of small inefficiencies:
-      data kept beyond its value, capacity left running “just in case” and workloads sized for peaks
-      that rarely happen. By increasing visibility and continuously checking usage signals, the platform
-      highlights the highest-impact changes first and estimates what you could save each month, so teams
-      can reduce cost without compromising reliability.
-    </p>
-  </div>
-
-</div>
-
 </section>
 <section class="marketing-shell">
 
-  <div class="marketing-section-intro">
-    <h2>What you could save</h2>
-    <p>
-      Most AWS waste comes from services running when they are not needed, storage kept long past its value,
-      and workloads that are larger than required. This platform flags the most common inefficiencies and
-      emails you a report with estimated monthly savings.
-    </p>
-  </div>
-
-  <div class="marketing-grid marketing-grid--two marketing-section-intro">
-
+  <div class="marketing-grid marketing-grid--two">
     <div class="card marketing-card">
-      <div class="marketing-card-head">
-        <img
-          src="{{ url_for('static', filename='images/s3.png') }}"
-          alt="S3"
-          class="marketing-icon marketing-icon--service"
-        />
-        <h3>Storage tiering (S3)</h3>
+      <h3>How it works</h3>
+      <p class="marketing-copy marketing-copy--gap">
+        The platform moves through a simple operating flow:
+      </p>
+      <div class="marketing-chip-row">
+        <span class="badge marketing-chip">Apply</span>
+        <span class="badge marketing-chip">Deploy</span>
+        <span class="badge marketing-chip">Run</span>
+        <span class="badge marketing-chip">Report</span>
       </div>
-
-      <p class="marketing-copy">
-        Identify buckets with low access patterns and recommend moving data to cheaper tiers.
-        Typical savings are <b>10 to 60%</b> on the affected storage, depending on access frequency.
+      <p class="marketing-copy" style="margin-top: 1rem;">
+        Once approved, the customer receives a deployment bundle that provisions the runner, enabled optimisers,
+        report storage and schedule directly in their AWS account.
       </p>
     </div>
 
     <div class="card marketing-card">
-      <div class="marketing-card-head">
-        <img
-          src="{{ url_for('static', filename='images/rds.png') }}"
-          alt="RDS"
-          class="marketing-icon marketing-icon--service"
-        />
-        <h3>Oversized databases (RDS)</h3>
-      </div>
-
-      <p class="marketing-copy">
-        Detect underutilised instances and propose smaller instance classes where safe.
-        Typical savings are <b>20 to 50%</b> on the affected database spend.
+      <h3>What the customer receives</h3>
+      <p class="marketing-copy marketing-copy--gap">
+        Every successful run generates structured outputs for review and follow-up.
       </p>
-    </div>
-
-    <div class="card marketing-card">
-      <div class="marketing-card-head">
-        <img
-          src="{{ url_for('static', filename='images/ecs.png') }}"
-          alt="ECS"
-          class="marketing-icon marketing-icon--service"
-        />
-        <h3>Idle containers (ECS)</h3>
+      <div class="marketing-chip-row">
+        <span class="badge marketing-chip">HTML report</span>
+        <span class="badge marketing-chip">JSON export</span>
+        <span class="badge marketing-chip">S3 storage</span>
+        <span class="badge marketing-chip">Email notification</span>
       </div>
-
-      <p class="marketing-copy">
-        Find services with consistently low CPU or memory usage and recommend rightsizing.
-        Typical savings are <b>15 to 40%</b> on the affected workloads.
+      <p class="marketing-copy" style="margin-top: 1rem;">
+        The aim is to turn optimisation findings into something readable, repeatable and easy to deploy.
       </p>
-    </div>
-
-    <div class="card marketing-card">
-      <div class="marketing-card-head">
-        <img
-          src="{{ url_for('static', filename='images/eks.png') }}"
-          alt="EKS"
-          class="marketing-icon marketing-icon--service"
-        />
-        <h3>Cluster efficiency (EKS)</h3>
-      </div>
-
-      <p class="marketing-copy">
-        Highlight inefficient node utilisation signals and opportunities to reduce capacity.
-        Typical savings are <b>10 to 35%</b> where clusters are overprovisioned.
-      </p>
-    </div>
-
-    <div class="card marketing-card marketing-card--wide">
-      <div class="marketing-card-head">
-        <img
-          src="{{ url_for('static', filename='images/spot.png') }}"
-          alt="EC2 Spot"
-          class="marketing-icon marketing-icon--service"
-        />
-        <h3>Spot usage (EC2 Spot Instances)</h3>
-      </div>
-
-      <p class="marketing-copy">
-        Recommend using Spot capacity for suitable workloads to cut compute costs.
-        Spot can reduce eligible compute spend by <b>up to 70 to 90%</b>, depending on workload tolerance.
-      </p>
-    </div>
-
-  </div>
-
-  <div class="marketing-section-intro">
-    <h2>What you receive</h2>
-    <p>
-      You receive an email report that lists recommendations by priority, shows the estimated monthly savings,
-      and explains what to change. If no issues are found, you will receive a short confirmation summary.
-    </p>
-  </div>
-
-  <div class="marketing-section-intro">
-    <h2>Current scope</h2>
-    <p class="marketing-copy marketing-copy--chip-intro">
-      The platform currently covers five of AWS’s most used services.
-    </p>
-
-    <div class="marketing-chip-row">
-
-      <span class="badge marketing-chip">
-        <img
-          src="{{ url_for('static', filename='images/s3.png') }}"
-          alt="S3"
-          class="marketing-icon marketing-icon--badge"
-        />
-        Amazon S3
-      </span>
-
-      <span class="badge marketing-chip">
-        <img
-          src="{{ url_for('static', filename='images/rds.png') }}"
-          alt="RDS"
-          class="marketing-icon marketing-icon--badge"
-        />
-        Amazon RDS
-      </span>
-
-      <span class="badge marketing-chip">
-        <img
-          src="{{ url_for('static', filename='images/ecs.png') }}"
-          alt="ECS"
-          class="marketing-icon marketing-icon--badge"
-        />
-        Amazon ECS
-      </span>
-
-      <span class="badge marketing-chip">
-        <img
-          src="{{ url_for('static', filename='images/eks.png') }}"
-          alt="EKS"
-          class="marketing-icon marketing-icon--badge"
-        />
-        Amazon EKS
-      </span>
-
-      <span class="badge marketing-chip">
-        <img
-          src="{{ url_for('static', filename='images/spot.png') }}"
-          alt="EC2 Spot"
-          class="marketing-icon marketing-icon--badge"
-        />
-        EC2 Spot Instances
-      </span>
-
     </div>
   </div>
 
@@ -228,13 +82,14 @@
     <a href="{{ url_for('apply_form') }}" class="marketing-action-link">
       Apply for access
     </a>
-
     <a href="{{ url_for('onboarding') }}" class="marketing-action-link">
-      View onboarding steps
+      View onboarding
     </a>
-
+    <a href="{{ url_for('platform') }}" class="marketing-action-link">
+      View platform overview
+    </a>
     <span class="marketing-action-note">
-      No credentials stored, read only access and you stay in control.
+      Deeper deployment and security detail lives on the overview and security pages.
     </span>
   </div>
 

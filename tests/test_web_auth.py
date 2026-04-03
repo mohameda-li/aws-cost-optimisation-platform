@@ -54,6 +54,13 @@ class TestWebAuth(unittest.TestCase):
         self.assertEqual(302, response.status_code)
         self.assertIn("/admin", response.location)
 
+    def test_login_page_redirects_customer_session_to_dashboard(self):
+        with self.client.session_transaction() as sess:
+            sess["user_role"] = "customer"
+        response = self.client.get("/login")
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/customer/dashboard", response.location)
+
     def test_customer_login_success(self):
         fake_conn = FakeConnection()
         account = {
@@ -95,6 +102,28 @@ class TestWebAuth(unittest.TestCase):
 
         self.assertEqual(403, response.status_code)
         self.assertIn(b"This admin account is inactive.", response.data)
+
+    def test_login_invalid_credentials_returns_401(self):
+        fake_conn = FakeConnection()
+        with patch("app.get_db_connection", return_value=fake_conn), patch(
+            "app.find_account_by_email", return_value=None
+        ):
+            response = self.client.post("/login", data={"email": "nope@example.com", "password": "wrongpass"})
+
+        self.assertEqual(401, response.status_code)
+        self.assertIn(b"Invalid email or password.", response.data)
+
+    def test_forgot_password_page_redirects_customer_session(self):
+        with self.client.session_transaction() as sess:
+            sess["user_role"] = "customer"
+        response = self.client.get("/forgot-password")
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/customer/dashboard", response.location)
+
+    def test_forgot_password_requires_email(self):
+        response = self.client.post("/forgot-password", data={"email": ""})
+        self.assertEqual(400, response.status_code)
+        self.assertIn(b"Email is required.", response.data)
 
     def test_forgot_password_lookup_not_found(self):
         fake_conn = FakeConnection()
@@ -212,6 +241,39 @@ class TestWebAuth(unittest.TestCase):
         self.assertEqual(302, response.status_code)
         self.assertIn("/forgot-password", response.location)
 
+    def test_forgot_password_verify_rejects_wrong_code_with_400(self):
+        with self.client.session_transaction() as sess:
+            sess["password_reset_verification"] = {
+                "email": "admin@example.com",
+                "code": "123456",
+                "expires_at": (web_app.utc_now() + timedelta(minutes=15)).isoformat(),
+            }
+
+        response = self.client.post(
+            "/forgot-password/verify",
+            data={"action": "verify", "verification_code": "999999"},
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn(b"Verification code is incorrect.", response.data)
+
+    def test_forgot_password_reset_page_redirects_when_account_missing(self):
+        fake_conn = FakeConnection()
+        with self.client.session_transaction() as sess:
+            sess["password_reset"] = {
+                "email": "missing@example.com",
+                "token": "token-123",
+                "expires_at": (web_app.utc_now() + timedelta(minutes=15)).isoformat(),
+            }
+
+        with patch("app.get_db_connection", return_value=fake_conn), patch(
+            "app.find_account_by_email", return_value=None
+        ):
+            response = self.client.get("/forgot-password/reset")
+
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/forgot-password", response.location)
+
     def test_forgot_password_reset_success(self):
         fake_conn = FakeConnection()
         account = {
@@ -272,6 +334,25 @@ class TestWebAuth(unittest.TestCase):
         )
         self.assertEqual(302, response.status_code)
         self.assertIn("/forgot-password/reset", response.location)
+
+    def test_logout_and_admin_alias_routes_redirect(self):
+        response = self.client.get("/admin/login")
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/login", response.location)
+
+        response = self.client.get("/admin/logout")
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/logout", response.location)
+
+        with self.client.session_transaction() as sess:
+            sess["user_role"] = "admin"
+            sess["admin_id"] = 1
+
+        response = self.client.get("/logout")
+        self.assertEqual(302, response.status_code)
+        self.assertIn("/login", response.location)
+        with self.client.session_transaction() as sess:
+            self.assertNotIn("user_role", sess)
 
 if __name__ == "__main__":
     unittest.main()

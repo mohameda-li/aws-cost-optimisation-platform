@@ -9,8 +9,10 @@
     <div class="section-copy">
       <div class="page-kicker">Customer Portal</div>
       <h1 class="page-title">Customer Dashboard</h1>
-      <p class="page-subtitle">Track your application status, update pending onboarding details and download your deployment bundle when approved.</p>
     </div>
+    <a href="{{ url_for('customer_new_application') }}" class="button-link">
+      New application
+    </a>
   </div>
 
   {% if banner == "submitted" %}
@@ -40,16 +42,16 @@
   {% endif %}
 
   {% if applications %}
-    <div style="display:grid; gap: 1rem;">
+    <div class="dashboard-stack">
       {% for app in applications %}
-        <div class="card" style="padding: 1.5rem; border-radius: 18px;">
+        <div class="card dashboard-card">
 
-          <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom: 1rem;">
+          <div class="dashboard-card-header">
             <div>
               <h2 style="margin:0; font-size:1.35rem;">
                 Application #{{ app.application_id }}
               </h2>
-              <div style="margin-top:0.35rem; opacity:0.72;">
+              <div class="dashboard-card-meta">
                 Submitted:
                 {% if app.created_at %}
                   {{ app.created_at.strftime("%Y-%m-%d %H:%M") if app.created_at.strftime is defined else app.created_at }}
@@ -92,7 +94,7 @@
               <div>{{ app.report_frequency or 'Not set' }}</div>
             </div>
 
-            <div class="data-block" style="grid-column:1 / -1;">
+            <div class="data-block data-block--full">
               <div class="data-label">Enabled Services</div>
               {% if app.services %}
                 <div class="chip-list">
@@ -107,10 +109,10 @@
               {% endif %}
             </div>
 
-            <div class="data-block" style="grid-column:1 / -1;">
+            <div class="data-block data-block--full">
               <div class="data-label">Report Recipients</div>
               {% if app.report_recipients %}
-                <ul style="margin:0; padding-left:1.2rem;">
+                <ul class="recipient-list">
                   {% for recipient in app.report_recipients %}
                     <li>{{ recipient.report_email }}</li>
                   {% endfor %}
@@ -120,96 +122,102 @@
               {% endif %}
             </div>
 
-            <div class="data-block" style="grid-column:1 / -1;">
+            <div class="data-block data-block--full">
               <div class="data-label">Notes</div>
               <div>{{ app.notes or 'No notes provided.' }}</div>
             </div>
           </div>
 
           {% if app.status == "approved" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
-              <span class="status-message">
+            <div class="card-section-row">
+              <span class="status-message status-message--card">
                 Approved. If you change this application, it will return to pending for review.
               </span>
-              <div class="action-row">
+              <div class="customer-action-grid">
                 <a
                   href="{{ url_for('download_bundle', application_id=app.application_id) }}"
-                  class="ghost-link"
+                  class="ghost-link customer-action-button"
                 >
                   Download Deployment Bundle
                 </a>
-                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
-                  {% if app.message_count %}
-                    Open conversation ({{ app.message_count }})
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link customer-action-button">
+                  {% if app.has_new_admin_message %}
+                    Open conversation · New message
+                  {% elif app.message_count %}
+                    Open conversation
                   {% else %}
                     Contact an admin
                   {% endif %}
                 </a>
-                {% if app.has_new_admin_message %}
-                  <span class="message-alert">New admin reply</span>
-                {% endif %}
-                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary">
+                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary customer-action-button">
                   Edit application
                 </a>
               </div>
             </div>
           {% elif app.status == "pending" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
-              <span class="status-message">
+            <div class="card-section-row">
+              <span class="status-message status-message--card">
                 Awaiting approval. You can still update or withdraw this application.
               </span>
-              <div class="action-row">
-                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
-                  {% if app.message_count %}
-                    Open conversation ({{ app.message_count }})
+              <div class="customer-action-grid">
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link customer-action-button">
+                  {% if app.has_new_admin_message %}
+                    Open conversation · New message
+                  {% elif app.message_count %}
+                    Open conversation
                   {% else %}
                     Contact an admin
                   {% endif %}
                 </a>
-                {% if app.has_new_admin_message %}
-                  <span class="message-alert">New admin reply</span>
-                {% endif %}
-                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary">
+                <a href="{{ url_for('edit_application', application_id=app.application_id) }}" class="button-link button-secondary customer-action-button">
                   Edit application
                 </a>
-                <form method="post" action="{{ url_for('withdraw_application', application_id=app.application_id) }}" class="inline-form">
-                  <button type="submit" class="button-link button-danger">
+                <form method="post" action="{{ url_for('withdraw_application', application_id=app.application_id) }}" class="inline-form dashboard-action-form">
+                  <button type="submit" class="button-link button-danger customer-action-button">
                     Withdraw application
                   </button>
                 </form>
               </div>
             </div>
           {% elif app.status == "rejected" %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
-              <span class="status-message">
+            <div class="card-section-row">
+              <span class="status-message status-message--card">
                 Application not approved
               </span>
-              <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
-                {% if app.message_count %}
-                  Open conversation ({{ app.message_count }})
-                {% else %}
-                  Contact an admin
-                {% endif %}
-              </a>
-              {% if app.has_new_admin_message %}
-                <span class="message-alert">New admin reply</span>
-              {% endif %}
+              <div class="customer-action-grid customer-action-grid--single">
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link customer-action-button">
+                  {% if app.has_new_admin_message %}
+                    Open conversation · New message
+                  {% elif app.message_count %}
+                    Open conversation
+                  {% else %}
+                    Contact an admin
+                  {% endif %}
+                </a>
+              </div>
             </div>
           {% else %}
-            <div style="margin-top: 1.25rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap;">
-              <span class="status-message">
+            <div class="card-section-row">
+              <span class="status-message status-message--card">
                 Bundle unavailable for current status
               </span>
-              <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link">
-                {% if app.message_count %}
-                  Open conversation ({{ app.message_count }})
-                {% else %}
-                  Contact an admin
-                {% endif %}
-              </a>
-              {% if app.has_new_admin_message %}
-                <span class="message-alert">New admin reply</span>
-              {% endif %}
+              <div class="customer-action-grid customer-action-grid--two">
+                <a
+                  href="{{ url_for('download_bundle', application_id=app.application_id) }}"
+                  class="ghost-link customer-action-button"
+                >
+                  Download Deployment Bundle
+                </a>
+                <a href="{{ url_for('customer_application_messages', application_id=app.application_id) }}" class="button-link customer-action-button">
+                  {% if app.has_new_admin_message %}
+                    Open conversation · New message
+                  {% elif app.message_count %}
+                    Open conversation
+                  {% else %}
+                    Contact an admin
+                  {% endif %}
+                </a>
+              </div>
             </div>
           {% endif %}
 
@@ -217,9 +225,10 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card" style="padding: 1.5rem; border-radius: 18px;">
+    <div class="card dashboard-card">
       <p class="subtle-empty">No applications found for this account.</p>
-      <div style="margin-top: 1rem;">
+      <div class="action-row" style="margin-top: 1rem;">
+        <a href="{{ url_for('customer_new_application') }}" class="button-link">Start an application</a>
         <a href="{{ url_for('onboarding') }}" class="ghost-link">View onboarding instructions</a>
       </div>
     </div>

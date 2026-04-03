@@ -28,7 +28,7 @@ class AppConfig:
         return cls(
             app_env=(os.getenv("APP_ENV") or os.getenv("FLASK_ENV") or "development").strip().lower(),
             secret_key=os.getenv("FLASK_SECRET_KEY", DEFAULT_SECRET_KEY),
-            app_base_url=(os.getenv("APP_BASE_URL") or "http://localhost:5050").rstrip("/"),
+            app_base_url=(os.getenv("APP_BASE_URL") or "http://127.0.0.1:5050").rstrip("/"),
             smtp_host=os.getenv("SMTP_HOST", "").strip(),
             smtp_port=int(os.getenv("SMTP_PORT", "587")),
             smtp_username=os.getenv("SMTP_USERNAME", "").strip(),

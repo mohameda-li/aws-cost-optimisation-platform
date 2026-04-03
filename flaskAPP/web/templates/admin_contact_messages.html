@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set page_type = "internal" %}
+
+{% block content %}
+<section class="shell">
+  <div class="section-head">
+    <div class="section-copy">
+      <div class="page-kicker">Administration</div>
+      <h1 class="page-title">Contact Inbox</h1>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="ghost-link">Back to Dashboard</a>
+  </div>
+
+  {% if messages %}
+    <div class="review-list">
+      {% for message in messages %}
+        <article class="card review-list-item">
+          <div class="review-list-main">
+            <div class="review-list-title-row">
+              <div>
+                <h2 class="review-list-title">
+                  {{ message.sender_name or 'Guest visitor' }}
+                </h2>
+                <div class="review-list-meta">
+                  {{ message.sender_email }}
+                  {% if message.organisation_name %}
+                    · {{ message.organisation_name }}
+                  {% endif %}
+                  {% if message.created_at %}
+                    · {{ message.created_at.strftime("%Y-%m-%d %H:%M") if message.created_at.strftime is defined else message.created_at }}
+                  {% endif %}
+                </div>
+              </div>
+              <span class="status-badge status-approved">
+                {{ message.sender_mode|capitalize }}
+              </span>
+            </div>
+
+            <div class="review-list-facts">
+              <span>Contact message #{{ message.contact_message_id }}</span>
+              {% if message.organisation_id %}
+                <span>Organisation ID: {{ message.organisation_id }}</span>
+              {% endif %}
+            </div>
+
+            <div class="message-body" style="margin-top:0.85rem;">
+              {{ message.message_body }}
+            </div>
+          </div>
+
+          <div class="review-list-actions">
+            <a href="mailto:{{ message.sender_email }}" class="button-link button-secondary dashboard-action">
+              Reply by email
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="padding: 1.5rem; border-radius: 18px;">
+      <p class="subtle-empty" style="margin:0;">No website contact messages yet.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

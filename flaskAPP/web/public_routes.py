@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 
-from flask import abort, render_template, request, send_from_directory, session, url_for, redirect
+from flask import render_template, request, send_from_directory, session, url_for, redirect
 
 
 APPLICATION_VERIFY_SESSION_KEY = "pending_application_verification"
@@ -9,9 +9,147 @@ APPLICATION_VERIFY_TTL_MINUTES = 15
 
 
 def register_public_routes(app, state):
+    def _redirect_admin_from_contact():
+        if session.get("user_role") == "admin":
+            return redirect(url_for("admin_dashboard"))
+        return None
+
+    def render_contact_page(*, errors=None, success_message=None, form=None):
+        form = form or {}
+        logged_in_customer = session.get("user_role") == "customer"
+        default_mode = "customer" if logged_in_customer else "guest"
+        selected_mode = (form.get("contact_mode") or default_mode).strip().lower()
+        if logged_in_customer:
+            selected_mode = "customer"
+        elif selected_mode not in {"guest", "login"}:
+            selected_mode = "guest"
+
+        return render_template(
+            "contact.html",
+            errors=errors or [],
+            success_message=success_message,
+            form={
+                "contact_mode": selected_mode,
+                "guest_email": (form.get("guest_email") or "").strip().lower(),
+                "message_body": (form.get("message_body") or "").strip(),
+            },
+            is_customer_logged_in=logged_in_customer,
+            current_customer_email=(session.get("customer_email") or "").strip().lower(),
+            current_customer_name=(session.get("customer_name") or "").strip(),
+        )
+
     @app.get("/")
     def index():
         return render_template("home.html")
+
+    @app.get("/platform")
+    def platform():
+        return render_template("platform.html")
+
+    @app.get("/security")
+    def security():
+        return render_template("security.html")
+
+    @app.get("/contact")
+    def contact():
+        redirect_response = _redirect_admin_from_contact()
+        if redirect_response is not None:
+            return redirect_response
+        return render_contact_page()
+
+    @app.post("/contact")
+    def contact_submit():
+        redirect_response = _redirect_admin_from_contact()
+        if redirect_response is not None:
+            return redirect_response
+
+        message_body = (request.form.get("message_body") or "").strip()
+        logged_in_customer = session.get("user_role") == "customer"
+        contact_mode = "customer" if logged_in_customer else (request.form.get("contact_mode") or "guest").strip().lower()
+        guest_email = (request.form.get("guest_email") or "").strip().lower()
+
+        if contact_mode == "login" and not logged_in_customer:
+            return redirect(url_for("login_page", next=url_for("contact")))
+
+        errors = []
+        if not message_body:
+            errors.append("Enter a message before sending.")
+
+        sender_mode = "guest"
+        sender_email = guest_email
+        sender_name = ""
+        customer_user_id = None
+
+        if logged_in_customer:
+            sender_mode = "customer"
+            sender_email = (session.get("customer_email") or "").strip().lower()
+            sender_name = (session.get("customer_name") or "").strip()
+            customer_user_id = session.get("customer_user_id")
+            if not state.is_valid_email(sender_email):
+                errors.append("Your signed-in account does not have a valid email address.")
+        else:
+            if contact_mode != "guest":
+                errors.append("Choose guest access or sign in before sending a message.")
+            if not state.is_valid_email(guest_email):
+                errors.append("Enter a valid email address to continue as a guest.")
+
+        if errors:
+            return render_contact_page(
+                errors=errors,
+                form={
+                    "contact_mode": contact_mode,
+                    "guest_email": guest_email,
+                    "message_body": message_body,
+                },
+            ), 400
+
+        conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
+        cursor = conn.cursor(dictionary=True)
+        admin_rows = []
+        try:
+            state.ensure_contact_messages_table(conn)
+            cursor.execute(
+                """
+                INSERT INTO contact_messages (
+                    customer_user_id,
+                    sender_mode,
+                    sender_name,
+                    sender_email,
+                    message_body
+                ) VALUES (%s, %s, %s, %s, %s)
+                """,
+                (customer_user_id, sender_mode, sender_name or None, sender_email, message_body),
+            )
+            conn.commit()
+            cursor.execute(
+                """
+                SELECT email
+                FROM admins
+                WHERE is_active = 1
+                ORDER BY admin_id ASC
+                """
+            )
+            admin_rows = cursor.fetchall() or []
+        finally:
+            cursor.close()
+            conn.close()
+
+        admin_emails = [(row or {}).get("email", "") for row in admin_rows]
+        state.send_contact_message_notification(
+            app,
+            state.app_config,
+            admin_emails,
+            sender_name or "Guest visitor",
+            sender_email,
+            message_body,
+            sender_mode=sender_mode,
+        )
+
+        return render_contact_page(
+            success_message="Your message has been sent to the admin team.",
+            form={"contact_mode": contact_mode},
+        )
 
     @app.get("/apply")
     def apply_form():
@@ -19,7 +157,7 @@ def register_public_routes(app, state):
 
     @app.get("/info")
     def info():
-        return render_template("info.html")
+        return redirect(url_for("platform"))
 
     @app.route("/favicon.ico")
     def favicon():
@@ -174,6 +312,7 @@ def register_public_routes(app, state):
         conn = state.get_db_connection()
         cursor = conn.cursor(dictionary=True)
         try:
+            state.ensure_application_snapshot_columns(conn)
             cursor.execute("SELECT organisation_id FROM organisations WHERE organisation_name = %s", (form["organisation_name"],))
             org = cursor.fetchone()
             if org:
@@ -202,8 +341,24 @@ def register_public_routes(app, state):
             )
             customer_user_id = cursor.lastrowid
             cursor.execute(
-                "INSERT INTO applications (customer_user_id, notes, status) VALUES (%s, %s, %s)",
-                (customer_user_id, form["notes"] or None, "pending"),
+                """
+                INSERT INTO applications (
+                    customer_user_id,
+                    organisation_name,
+                    contact_name,
+                    contact_email,
+                    notes,
+                    status
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    customer_user_id,
+                    form["organisation_name"],
+                    form["contact_name"],
+                    form["contact_email"],
+                    form["notes"] or None,
+                    "pending",
+                ),
             )
             application_id = cursor.lastrowid
             cursor.execute(

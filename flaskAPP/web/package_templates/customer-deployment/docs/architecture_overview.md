@@ -12,15 +12,19 @@ Components
 - EventBridge schedule
 - CloudWatch log groups
 - S3 bucket for generated reports
+- SMTP-configured email delivery for report notifications
 
 How it works
 ------------
 
-1. EventBridge triggers the runner on the configured schedule
-2. The runner checks the selected AWS services
-3. The optimisation functions estimate possible savings
-4. The results are combined into a report
-5. The report is uploaded to S3
+1. Terraform deploys the runner, selected optimiser functions, IAM role, schedule, and report bucket
+2. Terraform triggers one initial report run after deployment
+3. EventBridge then continues to trigger the runner on the configured schedule
+4. The runner checks the selected AWS services
+5. The optimisation functions estimate possible savings
+6. The results are combined into a report
+7. The report is uploaded to S3
+8. If SMTP is configured, the runner sends a report notification email
 
 Report formats
 --------------

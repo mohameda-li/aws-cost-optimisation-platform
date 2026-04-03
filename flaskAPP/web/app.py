@@ -16,10 +16,19 @@ from web_common import (
     customer_login_required,
     ensure_admin_superuser_support,
     ensure_application_messages_table,
+    ensure_application_snapshot_columns,
+    ensure_contact_messages_table,
     find_account_by_email,
     generate_verification_code,
     get_enabled_service_codes,
     hash_password,
+    is_valid_email,
+    get_customer_admin_message_state,
+    mark_customer_admin_messages_notified,
+    mark_customer_admin_messages_read,
+    send_application_message_notification,
+    send_contact_message_notification,
+    send_application_status_notification,
     send_verification_code,
     slugify,
     update_account_password,
@@ -32,7 +41,10 @@ app = Flask(__name__)
 app_config = AppConfig.from_env()
 app.secret_key = app_config.secret_key
 configure_logging(app, app_config)
-create_customer_bundle = lambda customer_data: _create_customer_bundle(app.root_path, customer_data)
+
+
+def create_customer_bundle(customer_data):
+    return _create_customer_bundle(app.root_path, customer_data)
 
 register_public_routes(app, sys.modules[__name__])
 register_auth_routes(app, sys.modules[__name__])
@@ -45,4 +57,4 @@ register_admin_routes(app, sys.modules[__name__])
 # ---------------------------
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=not app_config.is_production)

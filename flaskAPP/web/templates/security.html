@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="marketing-shell">
+  <div class="marketing-grid marketing-grid--split security-hero">
+    <div class="marketing-section-intro marketing-section-intro--compact">
+      <div class="page-kicker">Security</div>
+      <h1 class="auth-title">A customer-owned model that keeps infrastructure analysis inside the customer account.</h1>
+      <p class="marketing-copy marketing-copy--rich marketing-copy--lead">
+        The security story is deliberately simple: the code runs in the customer environment, reports stay in the customer
+        bucket and logs remain in the customer AWS account. The platform coordinates deployment generation, but it does not
+        become a central hosted engine for reading production infrastructure data.
+      </p>
+    </div>
+
+    <div class="security-posture-card">
+      <div class="security-posture-header">
+        <strong>Security posture</strong>
+        <span>Customer-controlled runtime</span>
+      </div>
+      <div class="security-posture-grid">
+        <div class="security-posture-item">
+          <label>Execution</label>
+          <span>Lambda runner and optimisers execute in customer AWS</span>
+        </div>
+        <div class="security-posture-item">
+          <label>Storage</label>
+          <span>Reports are written to the configured customer S3 bucket</span>
+        </div>
+        <div class="security-posture-item">
+          <label>Logging</label>
+          <span>Operational logs remain in CloudWatch within the deployed account</span>
+        </div>
+        <div class="security-posture-item">
+          <label>Scope</label>
+          <span>No automated remediation actions are applied to infrastructure</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marketing-grid marketing-grid--two security-detail-grid">
+    <div class="card marketing-card">
+      <h3>Where the code runs</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Runner and optimiser Lambdas execute inside the customer account. Reports are stored in the customer S3 bucket and
+        logs are written to the customer CloudWatch environment. This makes the deployment easier to audit and remove.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>Access model</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        The deployment uses a scoped IAM role to read service metadata, pricing inputs and reporting targets needed for
+        optimisation. The system does not perform automated remediation actions against customer infrastructure.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>Reporting and notifications</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Generated reports are written as HTML and JSON files and can be delivered by email using the configured SMTP or SES
+        settings. Notification emails are designed to point recipients back to the relevant customer workflow clearly.
+      </p>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>Operational controls</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Terraform supports straightforward destroy and redeploy workflows. Historical reports are retained in a controlled
+        way, and the deployment can be regenerated from the latest onboarding data when customer settings change.
+      </p>
+    </div>
+  </div>
+
+  <div class="marketing-actions marketing-actions--top">
+    <a href="{{ url_for('platform') }}" class="marketing-action-link">
+      View platform overview
+    </a>
+    <a href="{{ url_for('onboarding') }}" class="marketing-action-link">
+      View onboarding steps
+    </a>
+  </div>
+</section>
+
+{% endblock %}

@@ -9,6 +9,7 @@ Terraform issues
 - Re-run `terraform init` if providers are missing
 - If `terraform apply` fails during the automatic initial report step, confirm the AWS CLI is installed locally and can run `aws lambda invoke`
 - If `terraform apply` succeeds but you are unsure whether the first report ran, open `terraform/initial_report_response.json`
+- If a later application from the same customer looks different, confirm you are deploying the correct bundle. Each application generates its own bundle and settings snapshot.
 
 Email issues
 ------------
@@ -25,6 +26,7 @@ Lambda issues
 - Confirm the report bucket exists and is writable
 - Check `terraform/initial_report_response.json` from the automatic first run
 - If needed, invoke the runner manually and inspect the returned JSON body
+- If the bundle downloads from the admin workspace but not the customer dashboard, check the application status. Rejected applications do not expose the bundle to the customer.
 
 No findings in report
 ---------------------
@@ -33,3 +35,9 @@ No findings in report
 - Verify target buckets or service filters were configured correctly
 - Check whether the analysed account currently has matching AWS resources
 - Zero findings with no runtime errors still indicates a successful deployment when the account has no matching resources
+
+Customer/admin messaging
+------------------------
+
+- Customer-to-admin conversations are linked to each application separately.
+- If an expected conversation does not appear, confirm you opened the correct application because messages are not shared across different applications from the same customer account.

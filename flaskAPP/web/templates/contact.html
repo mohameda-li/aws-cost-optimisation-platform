@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="marketing-shell">
+  <div class="marketing-grid marketing-grid--split contact-hero">
+    <div class="marketing-section-intro marketing-section-intro--compact">
+      <div class="page-kicker">Contact</div>
+      <h1 class="auth-title">Get in touch about onboarding, deployment or reporting.</h1>
+      <p class="marketing-copy marketing-copy--rich marketing-copy--lead">
+        Send the admin team a direct message. Continue as a guest with an email address, or sign in if you already have
+        customer access.
+      </p>
+    </div>
+
+    <div class="contact-card">
+      <strong>Best route</strong>
+      <div class="contact-card-grid">
+        <div class="contact-card-item">
+          <label>New customer</label>
+          <span>Continue as a guest if you want to ask a question before applying.</span>
+        </div>
+        <div class="contact-card-item">
+          <label>Existing customer</label>
+          <span>Sign in if you want the message tied to your workspace and deployment history.</span>
+        </div>
+        <div class="contact-card-item">
+          <label>Admin response</label>
+          <span>The message is sent to the admin team so they can reply with the right next step.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marketing-grid marketing-grid--two">
+    <div class="card marketing-card contact-message-card">
+      <div class="contact-message-header">
+        <div>
+          <h3>Send a message</h3>
+          <p class="marketing-copy marketing-copy--rich">
+            Choose how you want to continue, then send a message to the admin team.
+          </p>
+        </div>
+        {% if is_customer_logged_in %}
+        <span class="badge contact-mode-badge">Signed in as {{ current_customer_email }}</span>
+        {% endif %}
+      </div>
+
+      {% if errors %}
+      <div class="apply-error-list auth-feedback">
+        {% for error in errors %}
+        <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if success_message %}
+      <div class="contact-success">{{ success_message }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('contact_submit') }}" class="contact-form" data-contact-form>
+        {% if not is_customer_logged_in %}
+        <div class="contact-mode-grid" role="radiogroup" aria-label="Choose contact mode">
+          <label class="contact-mode-card {% if form.contact_mode == 'guest' %}is-selected{% endif %}">
+            <input type="radio" name="contact_mode" value="guest" {% if form.contact_mode == 'guest' %}checked{% endif %}>
+            <span>Continue as guest</span>
+            <small>Enter your email address so the admin team can reply.</small>
+          </label>
+          <label class="contact-mode-card {% if form.contact_mode == 'login' %}is-selected{% endif %}">
+            <input type="radio" name="contact_mode" value="login" {% if form.contact_mode == 'login' %}checked{% endif %}>
+            <span>Log in</span>
+            <small>Use your account if you already have access to the customer workspace.</small>
+          </label>
+        </div>
+        {% endif %}
+
+        <div class="contact-form-guest-fields" data-contact-guest-fields {% if not is_customer_logged_in and form.contact_mode == 'login' %}hidden{% endif %}>
+          {% if not is_customer_logged_in %}
+          <div>
+            <label for="guest_email">Guest email</label>
+            <input
+              id="guest_email"
+              name="guest_email"
+              type="email"
+              placeholder="name@company.com"
+              value="{{ form.guest_email }}"
+              autocomplete="email"
+            >
+            <p class="apply-microcopy">Required if you continue as a guest.</p>
+          </div>
+          {% endif %}
+
+          <div>
+            <label for="message_body">Message</label>
+            <textarea
+              id="message_body"
+              name="message_body"
+              rows="7"
+              class="textarea"
+              placeholder="Tell the admin team what you need help with."
+            >{{ form.message_body }}</textarea>
+          </div>
+
+          <div class="contact-form-actions">
+            <button type="submit">Send message</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card marketing-card">
+      <h3>What happens next</h3>
+      <p class="marketing-copy marketing-copy--rich">
+        Guest messages are sent with the email address you provide. Signed-in messages can be followed up from inside the
+        customer workspace once you are logged in.
+      </p>
+      <div class="contact-card-grid">
+        <div class="contact-card-item">
+          <label>Before approval</label>
+          <span>Use guest contact for onboarding or deployment questions before you have an approved workspace.</span>
+        </div>
+        <div class="contact-card-item">
+          <label>After approval</label>
+          <span>Use your customer account for deployment follow-up, bundle changes and report questions.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marketing-actions marketing-actions--top">
+    <a href="{{ url_for('apply_form') }}" class="marketing-action-link">
+      Apply for access
+    </a>
+    <a href="{{ url_for('onboarding') }}" class="marketing-action-link">
+      View onboarding
+    </a>
+    <a href="{{ url_for('platform') }}" class="marketing-action-link">
+      View platform overview
+    </a>
+  </div>
+</section>
+
+<script>
+  (() => {
+    const form = document.querySelector("[data-contact-form]");
+    if (!form) return;
+
+    const radios = Array.from(form.querySelectorAll('input[name="contact_mode"]'));
+    const guestFields = form.querySelector("[data-contact-guest-fields]");
+    const cards = Array.from(form.querySelectorAll(".contact-mode-card"));
+    const loginUrl = "{{ url_for('login_page', next=url_for('contact')) }}";
+
+    const syncMode = () => {
+      const selected = radios.find((radio) => radio.checked)?.value || "guest";
+      cards.forEach((card) => {
+        const radio = card.querySelector('input[name="contact_mode"]');
+        card.classList.toggle("is-selected", radio?.value === selected);
+      });
+      if (selected === "login") {
+        window.location.href = loginUrl;
+        return;
+      }
+      if (guestFields) guestFields.hidden = false;
+    };
+
+    radios.forEach((radio) => radio.addEventListener("change", syncMode));
+    syncMode();
+  })();
+</script>
+
+{% endblock %}

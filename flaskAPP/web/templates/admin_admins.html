@@ -9,58 +9,29 @@
     <div class="section-copy">
       <div class="page-kicker">Administration</div>
       <h1 class="page-title">Manage Admins</h1>
-      <p class="page-subtitle">Add internal users, update passwords and keep access limited to the right administrators.</p>
     </div>
 
-    <a href="{{ url_for('admin_dashboard') }}" class="ghost-link">
-      Back to Dashboard
-    </a>
+    <div class="toolbar">
+      <a href="{{ url_for('admin_new_admin') }}" class="ghost-link">
+        Add Admin
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="ghost-link">
+        Back to Dashboard
+      </a>
+    </div>
   </div>
 
-  <div class="panel" style="margin-bottom: 1.5rem;">
-    <h2 style="font-size: 1.1rem;">Add Admin</h2>
-
-    <form method="post" action="{{ url_for('admin_create_admin') }}" class="inline-form">
-
-      <input
-        type="email"
-        name="email"
-        placeholder="New admin email"
-        style="min-width: 260px;"
-        required
-      />
-
-      <input
-        type="password"
-        name="password"
-        placeholder="New password"
-        style="min-width: 220px;"
-        required
-        minlength="8"
-      />
-
-      <input
-        type="password"
-        name="confirm_password"
-        placeholder="Confirm"
-        style="min-width: 220px;"
-        required
-        minlength="8"
-      />
-
-      <button type="submit">
-        Add
-      </button>
-    </form>
-
-    {% if error %}
-      <p style="margin: 0.75rem 0 0 0; color: #f87171; font-size: 0.95rem;">{{ error }}</p>
-    {% endif %}
-
-    {% if success %}
-      <p style="margin: 0.75rem 0 0 0; color: #86efac; font-size: 0.95rem;">{{ success }}</p>
-    {% endif %}
-  </div>
+  {% if banner == "password-updated" %}
+    <div class="notice notice--success">Admin password updated successfully.</div>
+  {% elif banner == "deleted" %}
+    <div class="notice notice--success">Admin account deleted successfully.</div>
+  {% elif banner == "password-invalid" %}
+    <div class="notice notice--warning">Password must be at least 8 characters long.</div>
+  {% elif banner == "password-mismatch" %}
+    <div class="notice notice--warning">Passwords do not match.</div>
+  {% elif banner == "delete-blocked" %}
+    <div class="notice notice--warning">That admin account cannot be deleted.</div>
+  {% endif %}
 
   {% if admins_list|length == 0 %}
     <p class="subtle-empty">No admin accounts found.</p>
@@ -73,7 +44,8 @@
           <th>Admin ID</th>
           <th>Email</th>
           <th>Created</th>
-          <th>Change Password</th>
+          <th>Access</th>
+          <th>Edit</th>
           <th>Delete</th>
         </tr>
       </thead>
@@ -81,60 +53,46 @@
       <tbody>
         {% for ad in admins_list %}
         <tr>
-          <td style="font-family: monospace;">
+          <td class="mono-cell">
             {{ ad.admin_id }}
           </td>
 
           <td>
             {{ ad.email }}
             {% if ad.is_superuser %}
-              <span style="margin-left: 0.5rem; font-size: 0.85rem; color:#93c5fd;">(superuser)</span>
+              <span class="admin-meta-pill">(superuser)</span>
             {% endif %}
             {% if session.get("admin_id") == ad.admin_id %}
-              <span style="margin-left: 0.5rem; font-size: 0.85rem; color:#94a3b8;">(you)</span>
+              <span class="admin-meta-pill admin-meta-pill--muted">(you)</span>
             {% endif %}
           </td>
 
-          <td style="font-size: 0.9rem; color: #94a3b8;">
+          <td class="admin-date-cell">
             {{ ad.created_at.strftime('%Y-%m-%d') if ad.created_at else '—' }}
           </td>
 
           <td>
-            <form method="post" action="{{ url_for('admin_update_admin_password') }}" class="inline-form">
-              <input type="hidden" name="admin_id" value="{{ ad.admin_id }}">
-
-              <input
-                type="password"
-                name="new_password"
-                placeholder="New password"
-                style="min-width: 220px;"
-                required
-                minlength="6"
-              />
-
-              <input
-                type="password"
-                name="confirm_password"
-                placeholder="Confirm"
-                style="min-width: 220px;"
-                required
-                minlength="6"
-              />
-
-              <button type="submit">
-                Update
-              </button>
-            </form>
+            {% if ad.is_superuser %}
+              <span class="admin-meta-pill">Superuser</span>
+            {% else %}
+              <span class="admin-meta-pill admin-meta-pill--muted">Standard admin</span>
+            {% endif %}
           </td>
 
           <td>
-            <form method="post" action="{{ url_for('admin_delete_admin') }}" style="margin:0;">
+            <a href="{{ url_for('admin_edit_admin', admin_id=ad.admin_id) }}" class="ghost-link admin-inline-button">
+              Edit
+            </a>
+          </td>
+
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_admin') }}" class="admin-delete-form">
               <input type="hidden" name="admin_id" value="{{ ad.admin_id }}">
               <button
                 type="submit"
+                class="ghost-link ghost-link-danger admin-inline-button"
                 {% if session.get("admin_id") == ad.admin_id or ad.is_superuser %}
                   disabled
-                  style="opacity:0.4; cursor:not-allowed;"
                 {% endif %}
               >
                 Delete

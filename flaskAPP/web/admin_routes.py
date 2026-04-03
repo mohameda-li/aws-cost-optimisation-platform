@@ -1,9 +1,11 @@
 import logging
 import os
 
-from flask import abort, redirect, render_template, request, send_from_directory, session, url_for
+from flask import abort, redirect, render_template, request, send_file, send_from_directory, session, url_for
 
 logger = logging.getLogger(__name__)
+
+_ADMIN_MESSAGE_VIEW_SESSION_KEY = "admin_message_views"
 
 
 def require_superuser():
@@ -16,6 +18,55 @@ def _with_query(base_url, query_string):
     return base_url
 
 
+def _get_last_viewed_message_id(application_id):
+    viewed_messages = session.get(_ADMIN_MESSAGE_VIEW_SESSION_KEY, {})
+    try:
+        return int(viewed_messages.get(str(application_id), 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _mark_messages_viewed(application_id, latest_message_id):
+    viewed_messages = dict(session.get(_ADMIN_MESSAGE_VIEW_SESSION_KEY, {}))
+    viewed_messages[str(application_id)] = int(latest_message_id or 0)
+    session[_ADMIN_MESSAGE_VIEW_SESSION_KEY] = viewed_messages
+
+
+def _load_contact_messages(cursor):
+    cursor.execute(
+        """
+        SELECT
+            cm.contact_message_id,
+            cm.sender_mode,
+            cm.sender_name,
+            cm.sender_email,
+            cm.message_body,
+            cm.created_at,
+            cu.organisation_id,
+            o.organisation_name
+        FROM contact_messages cm
+        LEFT JOIN customer_users cu
+          ON cm.customer_user_id = cu.customer_user_id
+        LEFT JOIN organisations o
+          ON cu.organisation_id = o.organisation_id
+        ORDER BY cm.created_at DESC, cm.contact_message_id DESC
+        """
+    )
+    return cursor.fetchall()
+
+
+def _load_admin_record(cursor, admin_id: int):
+    cursor.execute(
+        """
+        SELECT admin_id, full_name, email, password_hash, is_active, is_superuser, created_at
+        FROM admins
+        WHERE admin_id = %s
+        """,
+        (admin_id,),
+    )
+    return cursor.fetchone()
+
+
 def _load_application_detail(cursor, application_id):
     cursor.execute(
         """
@@ -25,10 +76,10 @@ def _load_application_detail(cursor, application_id):
             a.notes,
             a.created_at,
             cu.customer_user_id,
-            cu.contact_name,
-            cu.email AS contact_email,
+            COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+            COALESCE(a.contact_email, cu.email) AS contact_email,
             cu.organisation_id,
-            o.organisation_name,
+            COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
             ob.onboarding_id,
             ob.aws_region,
             ob.report_frequency,
@@ -85,7 +136,7 @@ def _load_application_detail(cursor, application_id):
 
     cursor.execute(
         """
-        SELECT sender_role, sender_name, message_body, created_at
+        SELECT message_id, sender_role, sender_name, message_body, created_at
         FROM application_messages
         WHERE application_id = %s
         ORDER BY created_at ASC, message_id ASC
@@ -93,8 +144,15 @@ def _load_application_detail(cursor, application_id):
         (application_id,),
     )
     app_row["messages"] = cursor.fetchall()
-    app_row["last_message_role"] = app_row["messages"][-1]["sender_role"] if app_row["messages"] else None
-    app_row["needs_admin_reply"] = app_row["last_message_role"] == "customer"
+    latest_message = app_row["messages"][-1] if app_row["messages"] else None
+    latest_message_id = latest_message.get("message_id", 0) if latest_message else 0
+    app_row["last_message_role"] = latest_message.get("sender_role") if latest_message else None
+    app_row["needs_admin_reply"] = bool(
+        latest_message
+        and latest_message["sender_role"] == "customer"
+        and latest_message_id > _get_last_viewed_message_id(application_id)
+    )
+    app_row["latest_message_id"] = latest_message_id
     return app_row
 
 
@@ -103,7 +161,9 @@ def register_admin_routes(app, state):
     @state.admin_login_required
     def admin_dashboard():
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
+        state.ensure_contact_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT COUNT(*) AS count FROM admins")
         admins_count = cursor.fetchone()["count"]
@@ -111,13 +171,15 @@ def register_admin_routes(app, state):
         applications_count = cursor.fetchone()["count"]
         cursor.execute("SELECT COUNT(*) AS count FROM onboardings")
         onboardings_count = cursor.fetchone()["count"]
+        cursor.execute("SELECT COUNT(*) AS count FROM contact_messages")
+        contact_messages_count = cursor.fetchone()["count"]
         cursor.execute(
             """
             SELECT
                 a.application_id,
-                o.organisation_name,
-                cu.contact_name,
-                cu.email AS contact_email,
+                COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
+                COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                COALESCE(a.contact_email, cu.email) AS contact_email,
                 a.status,
                 a.created_at
             FROM applications a
@@ -129,6 +191,33 @@ def register_admin_routes(app, state):
             """
         )
         apps = cursor.fetchall()
+        cursor.execute(
+            """
+            SELECT
+                am.message_id,
+                am.application_id,
+                am.sender_role,
+                am.sender_name,
+                am.message_body,
+                am.created_at,
+                a.status,
+                COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
+                COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                COALESCE(a.contact_email, cu.email) AS contact_email
+            FROM application_messages am
+            JOIN applications a
+              ON am.application_id = a.application_id
+            JOIN customer_users cu
+              ON a.customer_user_id = cu.customer_user_id
+            JOIN organisations o
+              ON cu.organisation_id = o.organisation_id
+            WHERE am.sender_role = 'customer'
+            ORDER BY am.created_at DESC, am.message_id DESC
+            LIMIT 5
+            """
+        )
+        recent_messages = cursor.fetchall()
+        contact_preview = _load_contact_messages(cursor)[:4]
         cursor.close()
         conn.close()
         pending_count = sum(1 for app_row in apps if app_row["status"] == "pending")
@@ -140,11 +229,31 @@ def register_admin_routes(app, state):
             admins=admins_count,
             applications=applications_count,
             onboardings=onboardings_count,
+            contact_messages_count=contact_messages_count,
+            contact_preview=contact_preview,
             apps=apps,
+            recent_messages=recent_messages,
             pending_apps=pending_apps,
             pending_count=pending_count,
             approved_count=approved_count,
             rejected_count=rejected_count,
+        )
+
+    @app.get("/admin/contact-messages")
+    @state.admin_login_required
+    def admin_contact_messages():
+        conn = state.get_db_connection()
+        state.ensure_contact_messages_table(conn)
+        cursor = conn.cursor(dictionary=True)
+        try:
+            messages = _load_contact_messages(cursor)
+        finally:
+            cursor.close()
+            conn.close()
+
+        return render_template(
+            "admin_contact_messages.html",
+            messages=messages,
         )
 
     @app.get("/admin/applications")
@@ -158,15 +267,16 @@ def register_admin_routes(app, state):
         sort_by = (request.args.get("sort") or "newest").strip().lower() or "newest"
 
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             """
             SELECT
                 a.application_id,
-                o.organisation_name,
-                cu.contact_name,
-                cu.email AS contact_email,
+                COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
+                COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                COALESCE(a.contact_email, cu.email) AS contact_email,
                 a.notes,
                 a.status,
                 a.created_at,
@@ -221,7 +331,7 @@ def register_admin_routes(app, state):
             app_row["message_count"] = count_row["count"] if count_row else 0
             cursor.execute(
                 """
-                SELECT sender_role
+                SELECT message_id, sender_role
                 FROM application_messages
                 WHERE application_id = %s
                 ORDER BY created_at DESC, message_id DESC
@@ -230,9 +340,11 @@ def register_admin_routes(app, state):
                 (app_row["application_id"],),
             )
             latest_message = cursor.fetchone()
+            latest_message_id = latest_message.get("message_id", 0) if latest_message else 0
             app_row["needs_admin_reply"] = bool(
                 latest_message
                 and latest_message.get("sender_role") == "customer"
+                and latest_message_id > _get_last_viewed_message_id(app_row["application_id"])
             )
         cursor.close()
         conn.close()
@@ -353,25 +465,45 @@ def register_admin_routes(app, state):
 
         application_id_int = int(application_id)
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
+        notification_target = None
         try:
             cursor.execute(
-                "UPDATE applications SET status = %s WHERE application_id = %s",
-                (new_status, application_id_int),
+                """
+                SELECT
+                    a.application_id,
+                    a.status,
+                    cu.organisation_id,
+                    COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                    COALESCE(a.contact_email, cu.email) AS contact_email,
+                    COALESCE(a.organisation_name, o.organisation_name) AS organisation_name
+                FROM applications a
+                JOIN customer_users cu
+                  ON a.customer_user_id = cu.customer_user_id
+                JOIN organisations o
+                  ON cu.organisation_id = o.organisation_id
+                WHERE a.application_id = %s
+                """,
+                (application_id_int,),
             )
-            conn.commit()
+            current_row = cursor.fetchone()
+            if not current_row:
+                abort(404)
+
+            previous_status = (current_row.get("status") or "").strip()
 
             if new_status == "approved":
-                cursor = conn.cursor(dictionary=True)
-                cursor.execute(
+                approval_cursor = conn.cursor(dictionary=True)
+                approval_cursor.execute(
                     """
                     SELECT
                         a.application_id,
                         cu.organisation_id,
-                        cu.contact_name,
-                        cu.email AS contact_email,
-                        o.organisation_name,
+                        COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                        COALESCE(a.contact_email, cu.email) AS contact_email,
+                        COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
                         ob.onboarding_id,
                         ob.aws_region,
                         ob.report_frequency
@@ -380,31 +512,35 @@ def register_admin_routes(app, state):
                       ON a.customer_user_id = cu.customer_user_id
                     JOIN organisations o
                       ON cu.organisation_id = o.organisation_id
-                    JOIN onboardings ob
+                    LEFT JOIN onboardings ob
                       ON ob.application_id = a.application_id
                     WHERE a.application_id = %s
                     """,
                     (application_id_int,),
                 )
-                data = cursor.fetchone()
+                data = approval_cursor.fetchone()
                 logger.info("Approval query returned onboarding data for application_id=%s", application_id_int)
                 if not data:
                     raise ValueError(f"No onboarding data found for application_id={application_id_int}")
 
-                cursor.execute("SELECT service_code FROM onboarding_services WHERE onboarding_id = %s", (data["onboarding_id"],))
-                service_rows = cursor.fetchall()
-                enabled_service_codes = [row["service_code"] for row in service_rows]
+                if data["onboarding_id"]:
+                    approval_cursor.execute("SELECT service_code FROM onboarding_services WHERE onboarding_id = %s", (data["onboarding_id"],))
+                    service_rows = approval_cursor.fetchall()
+                    enabled_service_codes = [row["service_code"] for row in service_rows]
 
-                cursor.execute(
-                    """
-                    SELECT report_email
-                    FROM onboarding_report_recipients
-                    WHERE onboarding_id = %s
-                    ORDER BY report_email
-                    """,
-                    (data["onboarding_id"],),
-                )
-                report_rows = cursor.fetchall()
+                    approval_cursor.execute(
+                        """
+                        SELECT report_email
+                        FROM onboarding_report_recipients
+                        WHERE onboarding_id = %s
+                        ORDER BY report_email
+                        """,
+                        (data["onboarding_id"],),
+                    )
+                    report_rows = approval_cursor.fetchall()
+                else:
+                    enabled_service_codes = []
+                    report_rows = []
                 customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_rows)
                 bundle_info = state.create_customer_bundle(customer_data)
                 logger.info(
@@ -412,9 +548,35 @@ def register_admin_routes(app, state):
                     application_id_int,
                     bundle_info.get("zip_filename"),
                 )
+                approval_cursor.close()
+
+            update_cursor = conn.cursor()
+            update_cursor.execute(
+                "UPDATE applications SET status = %s WHERE application_id = %s",
+                (new_status, application_id_int),
+            )
+            conn.commit()
+            update_cursor.close()
+
+            if previous_status != new_status:
+                notification_target = current_row
         finally:
             cursor.close()
             conn.close()
+
+        if notification_target:
+            try:
+                state.send_application_status_notification(
+                    app,
+                    state.app_config,
+                    notification_target.get("contact_email", ""),
+                    notification_target.get("contact_name", ""),
+                    notification_target.get("organisation_name", ""),
+                    application_id_int,
+                    new_status,
+                )
+            except Exception:
+                logger.exception("Status notification email failed for application_id=%s", application_id_int)
 
         if return_to == "detail":
             return redirect(_with_query(url_for("admin_application_detail", application_id=application_id_int), return_query))
@@ -425,6 +587,7 @@ def register_admin_routes(app, state):
     def admin_application_detail(application_id):
         return_query = (request.args.get("return_query") or "").strip()
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
         try:
@@ -434,6 +597,10 @@ def register_admin_routes(app, state):
         finally:
             cursor.close()
             conn.close()
+
+        if application.get("latest_message_id"):
+            _mark_messages_viewed(application_id, application["latest_message_id"])
+            application["needs_admin_reply"] = False
 
         return render_template(
             "admin_application_detail.html",
@@ -447,6 +614,7 @@ def register_admin_routes(app, state):
     def admin_application_messages(application_id):
         return_query = (request.args.get("return_query") or "").strip()
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
         try:
@@ -455,9 +623,9 @@ def register_admin_routes(app, state):
                 SELECT
                     a.application_id,
                     a.status,
-                    o.organisation_name,
-                    cu.contact_name,
-                    cu.email AS contact_email
+                    COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
+                    COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                    COALESCE(a.contact_email, cu.email) AS contact_email
                 FROM applications a
                 JOIN customer_users cu
                   ON a.customer_user_id = cu.customer_user_id
@@ -473,7 +641,7 @@ def register_admin_routes(app, state):
 
             cursor.execute(
                 """
-                SELECT sender_role, sender_name, message_body, created_at
+                SELECT message_id, sender_role, sender_name, message_body, created_at
                 FROM application_messages
                 WHERE application_id = %s
                 ORDER BY created_at ASC, message_id ASC
@@ -481,9 +649,13 @@ def register_admin_routes(app, state):
                 (application_id,),
             )
             messages = cursor.fetchall()
+            latest_message_id = messages[-1].get("message_id", 0) if messages else 0
         finally:
             cursor.close()
             conn.close()
+
+        if latest_message_id:
+            _mark_messages_viewed(application_id, latest_message_id)
 
         return render_template(
             "application_messages.html",
@@ -509,11 +681,25 @@ def register_admin_routes(app, state):
             return redirect(_with_query(url_for(target, application_id=application_id), return_query))
 
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
+        inserted_message_id = 0
         try:
             cursor.execute(
-                "SELECT application_id FROM applications WHERE application_id = %s",
+                """
+                SELECT
+                    a.application_id,
+                    COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
+                    COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                    COALESCE(a.contact_email, cu.email) AS contact_email
+                FROM applications a
+                JOIN customer_users cu
+                  ON a.customer_user_id = cu.customer_user_id
+                JOIN organisations o
+                  ON cu.organisation_id = o.organisation_id
+                WHERE a.application_id = %s
+                """,
                 (application_id,),
             )
             app_row = cursor.fetchone()
@@ -539,9 +725,51 @@ def register_admin_routes(app, state):
                 ),
             )
             conn.commit()
+            inserted_message_id = int(getattr(cursor, "lastrowid", 0) or 0)
+            if not inserted_message_id:
+                cursor.execute(
+                    """
+                    SELECT message_id
+                    FROM application_messages
+                    WHERE application_id = %s AND sender_role = 'admin'
+                    ORDER BY created_at DESC, message_id DESC
+                    LIMIT 1
+                    """,
+                    (application_id,),
+                )
+                latest_admin_message = cursor.fetchone()
+                inserted_message_id = int((latest_admin_message or {}).get("message_id") or 0)
+
+            notification_state = state.get_customer_admin_message_state(cursor, application_id)
+            should_send_notification = (
+                inserted_message_id
+                and int(notification_state.get("customer_last_notified_admin_message_id", 0) or 0)
+                <= int(notification_state.get("customer_last_read_admin_message_id", 0) or 0)
+            )
         finally:
             cursor.close()
             conn.close()
+
+        if should_send_notification:
+            try:
+                sent = state.send_application_message_notification(
+                    app,
+                    state.app_config,
+                    app_row.get("contact_email", ""),
+                    app_row.get("contact_name", ""),
+                    app_row.get("organisation_name", ""),
+                    application_id,
+                    session.get("admin_email") or "Admin",
+                )
+                if sent and inserted_message_id:
+                    notify_conn = state.get_db_connection()
+                    state.ensure_application_messages_table(notify_conn)
+                    try:
+                        state.mark_customer_admin_messages_notified(notify_conn, application_id, inserted_message_id)
+                    finally:
+                        notify_conn.close()
+            except Exception:
+                logger.exception("Message notification email failed for application_id=%s", application_id)
 
         target = "admin_application_detail" if return_to == "detail" else "admin_application_messages"
         return redirect(_with_query(url_for(target, application_id=application_id), return_query))
@@ -550,6 +778,7 @@ def register_admin_routes(app, state):
     @state.admin_login_required
     def admin_download_bundle(application_id):
         conn = state.get_db_connection()
+        state.ensure_application_snapshot_columns(conn)
         state.ensure_application_messages_table(conn)
         cursor = conn.cursor(dictionary=True)
         try:
@@ -559,9 +788,9 @@ def register_admin_routes(app, state):
                     a.application_id,
                     a.status,
                     cu.organisation_id,
-                    cu.contact_name,
-                    cu.email AS contact_email,
-                    o.organisation_name,
+                    COALESCE(a.contact_name, cu.contact_name) AS contact_name,
+                    COALESCE(a.contact_email, cu.email) AS contact_email,
+                    COALESCE(a.organisation_name, o.organisation_name) AS organisation_name,
                     ob.onboarding_id,
                     ob.aws_region,
                     ob.report_frequency
@@ -580,35 +809,30 @@ def register_admin_routes(app, state):
 
             if not data:
                 return render_template("bundle_error.html", title="Application not found", message="We could not find this application or its deployment bundle."), 404
-            if data["status"] == "pending":
-                return render_template("bundle_error.html", title="Bundle not available yet", message="This deployment bundle is not available yet because the application is still under review."), 403
-            if data["status"] == "rejected":
-                return render_template("bundle_error.html", title="Bundle unavailable", message="This application was not approved, so a deployment bundle is not available."), 403
-            if data["status"] != "approved":
-                return render_template("bundle_error.html", title="Bundle unavailable", message="This deployment bundle is not available for the current application status."), 403
-            if not data["onboarding_id"]:
-                return render_template("bundle_error.html", title="Onboarding data missing", message="We could not generate the deployment bundle because the onboarding configuration is incomplete."), 500
+            if data["onboarding_id"]:
+                cursor.execute("SELECT service_code FROM onboarding_services WHERE onboarding_id = %s", (data["onboarding_id"],))
+                service_rows = cursor.fetchall()
+                enabled_service_codes = [row["service_code"] for row in service_rows]
 
-            cursor.execute("SELECT service_code FROM onboarding_services WHERE onboarding_id = %s", (data["onboarding_id"],))
-            service_rows = cursor.fetchall()
-            enabled_service_codes = [row["service_code"] for row in service_rows]
-
-            cursor.execute(
-                """
-                SELECT report_email
-                FROM onboarding_report_recipients
-                WHERE onboarding_id = %s
-                ORDER BY report_email
-                """,
-                (data["onboarding_id"],),
-            )
-            report_rows = cursor.fetchall()
+                cursor.execute(
+                    """
+                    SELECT report_email
+                    FROM onboarding_report_recipients
+                    WHERE onboarding_id = %s
+                    ORDER BY report_email
+                    """,
+                    (data["onboarding_id"],),
+                )
+                report_rows = cursor.fetchall()
+            else:
+                enabled_service_codes = []
+                report_rows = []
         finally:
             cursor.close()
             conn.close()
 
-        customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_rows)
         try:
+            customer_data = state.build_customer_bundle_data(data, enabled_service_codes, report_rows)
             bundle_info = state.create_customer_bundle(customer_data)
         except Exception:
             logger.exception("Bundle generation failed for admin download, application_id=%s", application_id)
@@ -619,13 +843,19 @@ def register_admin_routes(app, state):
         if not os.path.exists(zip_path):
             return render_template("bundle_error.html", title="Bundle file missing", message="The deployment bundle could not be found after generation. Please try again."), 404
 
-        return send_from_directory(bundles_root, bundle_info["zip_filename"], as_attachment=True)
+        return send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=bundle_info["zip_filename"],
+            mimetype="application/zip",
+        )
 
     @app.get("/admin/admins")
     @state.admin_login_required
     def admin_manage_admins():
         if not require_superuser():
             return redirect(url_for("admin_dashboard"))
+        banner = (request.args.get("banner") or "").strip()
         conn = state.get_db_connection()
         state.ensure_admin_superuser_support(conn)
         cursor = conn.cursor(dictionary=True)
@@ -639,7 +869,65 @@ def register_admin_routes(app, state):
         admins_list = cursor.fetchall()
         cursor.close()
         conn.close()
-        return render_template("admin_admins.html", admins_list=admins_list)
+        return render_template("admin_admins.html", admins_list=admins_list, banner=banner)
+
+    @app.get("/admin/admins/new")
+    @state.admin_login_required
+    def admin_new_admin():
+        if not require_superuser():
+            return redirect(url_for("admin_dashboard"))
+        status = (request.args.get("status") or "").strip()
+        error = None
+        success = None
+        if status == "invalid-email":
+            error = "Enter a valid admin email address."
+        elif status == "short-password":
+            error = "Password must be at least 8 characters long."
+        elif status == "password-mismatch":
+            error = "Passwords do not match."
+        elif status == "create-failed":
+            error = "We could not create that admin account right now."
+        elif status == "created":
+            success = "Admin account created successfully."
+        return render_template("admin_add_admin.html", error=error, success=success)
+
+    @app.get("/admin/admins/<int:admin_id>/edit")
+    @state.admin_login_required
+    def admin_edit_admin(admin_id):
+        if not require_superuser():
+            return redirect(url_for("admin_dashboard"))
+
+        status = (request.args.get("status") or "").strip()
+        error = None
+        success = None
+        if status == "invalid-email":
+            error = "Enter a valid admin email address."
+        elif status == "short-password":
+            error = "Password must be at least 8 characters long."
+        elif status == "password-mismatch":
+            error = "Passwords do not match."
+        elif status == "update-failed":
+            error = "We could not update that admin account right now."
+        elif status == "updated":
+            success = "Admin account updated successfully."
+
+        conn = state.get_db_connection()
+        state.ensure_admin_superuser_support(conn)
+        cursor = conn.cursor(dictionary=True)
+        try:
+            admin_record = _load_admin_record(cursor, admin_id)
+            if not admin_record:
+                abort(404)
+        finally:
+            cursor.close()
+            conn.close()
+
+        return render_template(
+            "admin_edit_admin.html",
+            admin_record=admin_record,
+            error=error,
+            success=success,
+        )
 
     @app.post("/admin/admins/create")
     @state.admin_login_required
@@ -650,11 +938,11 @@ def register_admin_routes(app, state):
         password = request.form.get("password") or ""
         confirm = request.form.get("confirm_password") or ""
         if not email or "@" not in email:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_new_admin", status="invalid-email"))
         if len(password) < 8:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_new_admin", status="short-password"))
         if password != confirm:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_new_admin", status="password-mismatch"))
 
         conn = state.get_db_connection()
         state.ensure_admin_superuser_support(conn)
@@ -670,10 +958,65 @@ def register_admin_routes(app, state):
             conn.commit()
         except Exception:
             conn.rollback()
+            return redirect(url_for("admin_new_admin", status="create-failed"))
         finally:
             cursor.close()
             conn.close()
-        return redirect(url_for("admin_manage_admins"))
+        return redirect(url_for("admin_new_admin", status="created"))
+
+    @app.post("/admin/admins/update")
+    @state.admin_login_required
+    def admin_update_admin():
+        if not require_superuser():
+            return redirect(url_for("admin_dashboard"))
+
+        admin_id = (request.form.get("admin_id") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
+        new_password = request.form.get("new_password") or ""
+        confirm_password = request.form.get("confirm_password") or ""
+
+        if not admin_id.isdigit():
+            abort(400)
+
+        admin_id_int = int(admin_id)
+        if not state.is_valid_email(email):
+            return redirect(url_for("admin_edit_admin", admin_id=admin_id_int, status="invalid-email"))
+        if new_password and len(new_password) < 8:
+            return redirect(url_for("admin_edit_admin", admin_id=admin_id_int, status="short-password"))
+        if new_password != confirm_password:
+            return redirect(url_for("admin_edit_admin", admin_id=admin_id_int, status="password-mismatch"))
+
+        conn = state.get_db_connection()
+        state.ensure_admin_superuser_support(conn)
+        cursor = conn.cursor(dictionary=True)
+        try:
+            admin_record = _load_admin_record(cursor, admin_id_int)
+            if not admin_record:
+                abort(404)
+
+            if new_password:
+                cursor.close()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE admins SET email = %s, password_hash = %s WHERE admin_id = %s",
+                    (email, state.hash_password(new_password), admin_id_int),
+                )
+            else:
+                cursor.close()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE admins SET email = %s WHERE admin_id = %s",
+                    (email, admin_id_int),
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            return redirect(url_for("admin_edit_admin", admin_id=admin_id_int, status="update-failed"))
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for("admin_edit_admin", admin_id=admin_id_int, status="updated"))
 
     @app.post("/admin/admins/update-password")
     @state.admin_login_required
@@ -686,9 +1029,9 @@ def register_admin_routes(app, state):
         if not admin_id.isdigit():
             abort(400)
         if len(new_password) < 8:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_manage_admins", banner="password-invalid"))
         if new_password != confirm_password:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_manage_admins", banner="password-mismatch"))
 
         conn = state.get_db_connection()
         state.ensure_admin_superuser_support(conn)
@@ -700,7 +1043,7 @@ def register_admin_routes(app, state):
         conn.commit()
         cursor.close()
         conn.close()
-        return redirect(url_for("admin_manage_admins"))
+        return redirect(url_for("admin_manage_admins", banner="password-updated"))
 
     @app.post("/admin/admins/delete")
     @state.admin_login_required
@@ -712,7 +1055,7 @@ def register_admin_routes(app, state):
             abort(400)
         admin_id_int = int(admin_id)
         if session.get("admin_id") == admin_id_int:
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_manage_admins", banner="delete-blocked"))
 
         conn = state.get_db_connection()
         state.ensure_admin_superuser_support(conn)
@@ -722,7 +1065,7 @@ def register_admin_routes(app, state):
         if total_admins <= 1:
             cursor.close()
             conn.close()
-            return redirect(url_for("admin_manage_admins"))
+            return redirect(url_for("admin_manage_admins", banner="delete-blocked"))
         cursor.close()
 
         cursor2 = conn.cursor()
@@ -730,4 +1073,4 @@ def register_admin_routes(app, state):
         conn.commit()
         cursor2.close()
         conn.close()
-        return redirect(url_for("admin_manage_admins"))
+        return redirect(url_for("admin_manage_admins", banner="deleted"))
